@@ -201,6 +201,9 @@ namespace DuckovCustomModel.MonoBehaviours
             var scrollImage = scrollView.GetComponent<Image>();
             scrollImage.color = new(0.05f, 0.08f, 0.12f, 0.8f);
 
+            var mask = scrollView.AddComponent<Mask>();
+            mask.showMaskGraphic = false;
+
             _modelScrollRect = scrollView.GetComponent<ScrollRect>();
             _modelScrollRect.horizontal = false;
             _modelScrollRect.vertical = true;
@@ -219,9 +222,9 @@ namespace DuckovCustomModel.MonoBehaviours
             layoutGroup.padding = new(10, 10, 10, 10);
             layoutGroup.spacing = 10;
             layoutGroup.childAlignment = TextAnchor.UpperLeft;
-            layoutGroup.childControlWidth = true;
+            layoutGroup.childControlWidth = false;
             layoutGroup.childControlHeight = false;
-            layoutGroup.childForceExpandWidth = true;
+            layoutGroup.childForceExpandWidth = false;
             layoutGroup.childForceExpandHeight = false;
 
             var sizeFitter = _modelListContent.GetComponent<ContentSizeFitter>();
@@ -303,12 +306,13 @@ namespace DuckovCustomModel.MonoBehaviours
             buttonImage.color = hasError ? new(0.22f, 0.15f, 0.15f, 0.8f) : new(0.15f, 0.18f, 0.22f, 0.8f);
 
             var buttonRect = buttonObj.GetComponent<RectTransform>();
-            buttonRect.sizeDelta = new(0, 100);
+            buttonRect.sizeDelta = new(1140, 100);
 
             var layoutElement = buttonObj.GetComponent<LayoutElement>();
             layoutElement.minHeight = 100;
             layoutElement.preferredHeight = 100;
-            layoutElement.flexibleWidth = 1;
+            layoutElement.preferredWidth = 1140;
+            layoutElement.flexibleWidth = 0;
 
             var outline = buttonObj.AddComponent<Outline>();
             outline.effectColor = hasError
@@ -404,7 +408,7 @@ namespace DuckovCustomModel.MonoBehaviours
 
             if (!string.IsNullOrEmpty(model.Description))
             {
-                var descText = new GameObject("Description", typeof(Text));
+                var descText = new GameObject("Description", typeof(Text), typeof(ContentSizeFitter));
                 descText.transform.SetParent(contentArea.transform, false);
                 var descTextComponent = descText.GetComponent<Text>();
                 descTextComponent.text = model.Description;
@@ -413,11 +417,14 @@ namespace DuckovCustomModel.MonoBehaviours
                 descTextComponent.color = new(0.7f, 0.7f, 0.7f, 1);
                 descTextComponent.alignment = TextAnchor.UpperLeft;
                 descTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
-                descTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
+                descTextComponent.verticalOverflow = VerticalWrapMode.Overflow;
                 var descRect = descText.GetComponent<RectTransform>();
-                descRect.sizeDelta = new(0, 0);
+                descRect.sizeDelta = new(0, 20);
                 var descLayoutElement = descText.AddComponent<LayoutElement>();
+                descLayoutElement.minHeight = 20;
                 descLayoutElement.flexibleHeight = 1;
+                var contentSizeFitter = descText.GetComponent<ContentSizeFitter>();
+                contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             }
 
             var button = buttonObj.GetComponent<Button>();
@@ -445,12 +452,13 @@ namespace DuckovCustomModel.MonoBehaviours
             buttonImage.color = new(0.2f, 0.15f, 0.15f, 0.8f);
 
             var buttonRect = buttonObj.GetComponent<RectTransform>();
-            buttonRect.sizeDelta = new(0, 80);
+            buttonRect.sizeDelta = new(1140, 80);
 
             var layoutElement = buttonObj.GetComponent<LayoutElement>();
             layoutElement.minHeight = 80;
             layoutElement.preferredHeight = 80;
-            layoutElement.flexibleWidth = 1;
+            layoutElement.preferredWidth = 1140;
+            layoutElement.flexibleWidth = 0;
 
             var outline = buttonObj.AddComponent<Outline>();
             outline.effectColor = new(0.4f, 0.3f, 0.3f, 0.6f);

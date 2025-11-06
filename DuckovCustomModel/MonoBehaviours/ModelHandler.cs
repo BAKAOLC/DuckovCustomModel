@@ -59,7 +59,12 @@ namespace DuckovCustomModel.MonoBehaviours
 
         public void RestoreOriginalModel()
         {
-            if (OriginalCharacterModel == null) return;
+            if (OriginalCharacterModel == null)
+            {
+                ModLogger.LogError("OriginalCharacterModel is not set.");
+                return;
+            }
+
             if (!IsHiddenOriginalModel) return;
 
             var customFaceInstance = GetOriginalCustomFaceInstance();
@@ -75,16 +80,23 @@ namespace DuckovCustomModel.MonoBehaviours
 
         public void ChangeToCustomModel()
         {
-            if (OriginalCharacterModel == null) return;
+            if (OriginalCharacterModel == null)
+            {
+                ModLogger.LogError("OriginalCharacterModel is not set.");
+                return;
+            }
+
+            if (CustomModelInstance == null)
+            {
+                ModLogger.LogError("Custom model instance is not initialized.");
+                return;
+            }
 
             var customFaceInstance = GetOriginalCustomFaceInstance();
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(false);
 
-            if (CustomModelInstance != null)
-            {
-                CustomModelInstance.SetActive(true);
-                foreach (var kvp in _customModelSockets) ReplaceModelSocket(kvp.Key, kvp.Value);
-            }
+            CustomModelInstance.SetActive(true);
+            ChangeToCustomModelSockets();
 
             IsHiddenOriginalModel = true;
             ModLogger.Log("Changed to custom model.");
@@ -126,6 +138,8 @@ namespace DuckovCustomModel.MonoBehaviours
             CustomModelInstance = Instantiate(customModelPrefab, OriginalCharacterModel.transform);
             CustomModelInstance.name = "CustomModelInstance";
             CustomModelInstance.layer = LayerMask.NameToLayer("Default");
+
+            ReplaceShader(CustomModelInstance);
 
             // Get the Animator component from the custom model
             CustomAnimator = CustomModelInstance.GetComponent<Animator>();
@@ -173,8 +187,8 @@ namespace DuckovCustomModel.MonoBehaviours
             _customModelSockets.Clear();
             foreach (var kvp in CustomModelSocketNames)
             {
-                var anchorTransform = SearchAnchorTransform(CustomModelInstance!, kvp.Value);
-                if (anchorTransform != null) _customModelSockets[kvp.Key] = anchorTransform;
+                var locatorTransform = SearchLocatorTransform(CustomModelInstance!, kvp.Value);
+                if (locatorTransform != null) _customModelSockets[kvp.Key] = locatorTransform;
             }
         }
 
@@ -182,6 +196,7 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (OriginalCharacterModel == null) return;
 
+            RestoreToOriginalModelSockets();
             foreach (var kvp in _customModelSockets) ReplaceModelSocket(kvp.Key, kvp.Value);
         }
 
@@ -193,24 +208,67 @@ namespace DuckovCustomModel.MonoBehaviours
         private void ReplaceModelSocket(FieldInfo socketField, Transform? newSocket)
         {
             if (OriginalCharacterModel == null || newSocket == null) return;
+            var originalSocket = socketField.GetValue(OriginalCharacterModel) as Transform;
+            if (originalSocket == newSocket) return;
+            var originalChildren = new List<Transform>();
+            if (originalSocket != null) originalChildren.AddRange(originalSocket.Cast<Transform>());
             socketField.SetValue(OriginalCharacterModel, newSocket);
+            foreach (var child in originalChildren)
+            {
+                child.SetParent(newSocket, false);
+                child.localRotation = Quaternion.identity;
+                child.localPosition = Vector3.zero;
+            }
         }
 
-        private static Transform? SearchAnchorTransform(GameObject modelInstance, string anchorName)
+        private static Transform? SearchLocatorTransform(GameObject modelInstance, string locatorName)
         {
             var transforms = modelInstance.GetComponentsInChildren<Transform>(true);
-            return transforms.FirstOrDefault(t => t.name == anchorName);
+            return transforms.FirstOrDefault(t => t.name == locatorName);
         }
+
+        private static void ReplaceShader(GameObject targetGameObject)
+        {
+            var shader = GameDefaultShader;
+            if (shader == null)
+            {
+                ModLogger.LogError("Game default shader not found.");
+                return;
+            }
+
+            var renderers = targetGameObject.GetComponentsInChildren<Renderer>(true);
+            foreach (var renderer in renderers)
+            foreach (var material in renderer.materials)
+            {
+                if (material == null) continue;
+                material.shader = shader;
+                material.SetColor(EmissionColor, Color.black);
+                material.DisableKeyword("_EMISSION");
+                if (material.HasProperty(EmissionMap)) material.SetTexture(EmissionMap, null);
+            }
+        }
+
+        #region Shader Properties
+
+        // ReSharper disable once ShaderLabShaderReferenceNotResolved
+        private static Shader GameDefaultShader => Shader.Find("SodaCraft/SodaCharacter");
+        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
+        private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
+
+        #endregion
 
         #region Original Sockets FieldInfos
 
-        private static readonly FieldInfo LefthandSocket = AccessTools.Field(typeof(CharacterModel), "lefthandSocket");
+        // ReSharper disable once StringLiteralTypo
+        private static readonly FieldInfo LeftHandSocket = AccessTools.Field(typeof(CharacterModel), "lefthandSocket");
 
         private static readonly FieldInfo
             RightHandSocket = AccessTools.Field(typeof(CharacterModel), "rightHandSocket");
 
         private static readonly FieldInfo ArmorSocket = AccessTools.Field(typeof(CharacterModel), "armorSocket");
-        private static readonly FieldInfo HelmatSocket = AccessTools.Field(typeof(CharacterModel), "helmatSocket");
+
+        // ReSharper disable once StringLiteralTypo
+        private static readonly FieldInfo HelmetSocket = AccessTools.Field(typeof(CharacterModel), "helmatSocket");
         private static readonly FieldInfo FaceSocket = AccessTools.Field(typeof(CharacterModel), "faceSocket");
         private static readonly FieldInfo BackpackSocket = AccessTools.Field(typeof(CharacterModel), "backpackSocket");
 
@@ -221,10 +279,10 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private static readonly FieldInfo[] OriginalModelSocketFieldInfos =
         [
-            LefthandSocket,
+            LeftHandSocket,
             RightHandSocket,
             ArmorSocket,
-            HelmatSocket,
+            HelmetSocket,
             FaceSocket,
             BackpackSocket,
             MeleeWeaponSocket,
@@ -235,25 +293,25 @@ namespace DuckovCustomModel.MonoBehaviours
 
         #region Custom Sockets
 
-        private const string LeftHandAnchorName = "LeftHandAnchor";
-        private const string RightHandAnchorName = "RightHandAnchor";
-        private const string ArmorAnchorName = "ArmorAnchor";
-        private const string HelmatAnchorName = "HelmatAnchor";
-        private const string FaceAnchorName = "FaceAnchor";
-        private const string BackpackAnchorName = "BackpackAnchor";
-        private const string MeleeWeaponAnchorName = "MeleeWeaponAnchor";
-        private const string PopTextAnchorName = "PopTextAnchor";
+        private const string LeftHandLocatorName = "LeftHandLocator";
+        private const string RightHandLocatorName = "RightHandLocator";
+        private const string ArmorLocatorName = "ArmorLocator";
+        private const string HelmetLocatorName = "HelmetLocator";
+        private const string FaceLocatorName = "FaceLocator";
+        private const string BackpackLocatorName = "BackpackLocator";
+        private const string MeleeWeaponLocatorName = "MeleeWeaponLocator";
+        private const string PopTextLocatorName = "PopTextLocator";
 
         private static readonly Dictionary<FieldInfo, string> CustomModelSocketNames = new()
         {
-            { LefthandSocket, LeftHandAnchorName },
-            { RightHandSocket, RightHandAnchorName },
-            { ArmorSocket, ArmorAnchorName },
-            { HelmatSocket, HelmatAnchorName },
-            { FaceSocket, FaceAnchorName },
-            { BackpackSocket, BackpackAnchorName },
-            { MeleeWeaponSocket, MeleeWeaponAnchorName },
-            { PopTextSocket, PopTextAnchorName },
+            { LeftHandSocket, LeftHandLocatorName },
+            { RightHandSocket, RightHandLocatorName },
+            { ArmorSocket, ArmorLocatorName },
+            { HelmetSocket, HelmetLocatorName },
+            { FaceSocket, FaceLocatorName },
+            { BackpackSocket, BackpackLocatorName },
+            { MeleeWeaponSocket, MeleeWeaponLocatorName },
+            { PopTextSocket, PopTextLocatorName },
         };
 
         #endregion
