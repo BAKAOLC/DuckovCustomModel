@@ -560,16 +560,23 @@ namespace DuckovCustomModel.MonoBehaviours
                 : new(0.3f, 0.35f, 0.4f, 0.6f);
             outline.effectDistance = new(1, -1);
 
-            var thumbnailImage = new GameObject("Thumbnail", typeof(Image));
+            var thumbnailImage = new GameObject("Thumbnail", typeof(Image), typeof(LayoutElement));
             thumbnailImage.transform.SetParent(buttonObj.transform, false);
             var thumbnailImageComponent = thumbnailImage.GetComponent<Image>();
-            thumbnailImageComponent.color = new(0.2f, 0.2f, 0.2f, 1);
             var thumbnailRect = thumbnailImage.GetComponent<RectTransform>();
-            thumbnailRect.anchorMin = new(0, 0);
-            thumbnailRect.anchorMax = new(0, 1);
+            thumbnailRect.anchorMin = new(0, 0.5f);
+            thumbnailRect.anchorMax = new(0, 0.5f);
             thumbnailRect.pivot = new(0, 0.5f);
             thumbnailRect.anchoredPosition = new(10, 0);
             thumbnailRect.sizeDelta = new(80, 80);
+
+            var thumbnailLayoutElement = thumbnailImage.GetComponent<LayoutElement>();
+            thumbnailLayoutElement.minWidth = 80;
+            thumbnailLayoutElement.minHeight = 80;
+            thumbnailLayoutElement.preferredWidth = 80;
+            thumbnailLayoutElement.preferredHeight = 80;
+            thumbnailLayoutElement.flexibleWidth = 0;
+            thumbnailLayoutElement.flexibleHeight = 0;
 
             var texture = AssetBundleManager.LoadThumbnailTexture(bundle, model);
             if (texture != null)
@@ -578,6 +585,27 @@ namespace DuckovCustomModel.MonoBehaviours
                     new(0.5f, 0.5f));
                 thumbnailImageComponent.sprite = sprite;
                 thumbnailImageComponent.preserveAspect = true;
+                thumbnailImageComponent.color = Color.white;
+            }
+            else
+            {
+                thumbnailImageComponent.color = new(0.15f, 0.15f, 0.15f, 1);
+                var thumbnailOutline = thumbnailImage.AddComponent<Outline>();
+                thumbnailOutline.effectColor = new(0.3f, 0.3f, 0.3f, 0.5f);
+                thumbnailOutline.effectDistance = new(1, -1);
+
+                var placeholderText = new GameObject("PlaceholderText", typeof(Text));
+                placeholderText.transform.SetParent(thumbnailImage.transform, false);
+                var placeholderTextComponent = placeholderText.GetComponent<Text>();
+                placeholderTextComponent.text = "无预览";
+                placeholderTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                placeholderTextComponent.fontSize = 11;
+                placeholderTextComponent.color = new(0.6f, 0.6f, 0.6f, 1);
+                placeholderTextComponent.alignment = TextAnchor.MiddleCenter;
+                var placeholderRect = placeholderText.GetComponent<RectTransform>();
+                placeholderRect.anchorMin = Vector2.zero;
+                placeholderRect.anchorMax = Vector2.one;
+                placeholderRect.sizeDelta = Vector2.zero;
             }
 
             var contentArea = new GameObject("ContentArea", typeof(RectTransform), typeof(VerticalLayoutGroup));
