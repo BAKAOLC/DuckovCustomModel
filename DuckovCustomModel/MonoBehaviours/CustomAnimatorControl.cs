@@ -77,6 +77,24 @@ namespace DuckovCustomModel.MonoBehaviours
             UpdateAttackLayerWeight();
         }
 
+        private void OnDisable()
+        {
+            if (_characterModel == null) return;
+            var equipmentSockets = new[]
+            {
+                CharacterModelSocketUtils.GetHelmetSocket(_characterModel),
+                CharacterModelSocketUtils.GetFaceSocket(_characterModel),
+                CharacterModelSocketUtils.GetArmorSocket(_characterModel),
+                CharacterModelSocketUtils.GetBackpackSocket(_characterModel),
+            };
+
+            foreach (var socket in equipmentSockets)
+            {
+                if (socket == null) continue;
+                foreach (Transform child in socket) child.gameObject.SetActive(true);
+            }
+        }
+
         private void OnDestroy()
         {
             if (_characterModel != null) _characterModel.OnAttackOrShootEvent -= OnAttack;
@@ -216,6 +234,20 @@ namespace DuckovCustomModel.MonoBehaviours
             _customAnimator.SetBool(AnimatorMeleeWeaponEquipHash,
                 meleeWeaponSocket != null && meleeWeaponSocket.childCount > 0);
             _customAnimator.SetBool(AnimatorHavePopTextHash, popTextSocket != null && popTextSocket.childCount > 0);
+
+            var equipmentSockets = new[]
+            {
+                helmetSocket,
+                faceSocket,
+                armorSocket,
+                backpackSocket,
+            };
+            var visible = !hideOriginalEquipment;
+            foreach (var socket in equipmentSockets)
+            {
+                if (socket == null) continue;
+                foreach (Transform child in socket) child.gameObject.SetActive(visible);
+            }
         }
 
         private void UpdateHandState()
