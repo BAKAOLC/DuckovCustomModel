@@ -26,7 +26,7 @@ namespace DuckovCustomModel
             }
 
             Instance = this;
-            ModLogger.Log($"{Constant.ModName} 已加载");
+            ModLogger.Log($"{Constant.ModName} loaded");
         }
 
         private void OnEnable()
@@ -36,9 +36,14 @@ namespace DuckovCustomModel
             var patched = PatchAll();
             if (!patched) ModLogger.LogError("Unable to apply Harmony patches, the mod may not function correctly.");
 
+            LevelManager.OnLevelBeginInitializing += LevelManager_OnLevelBeginInitializing;
             LevelManager.OnAfterLevelInitialized += LevelManager_OnAfterLevelInitialized;
 
             ModelManager.UpdateModelBundles();
+
+            string? priorityModelID = null;
+            if (UsingModel != null && !string.IsNullOrEmpty(UsingModel.ModelID)) priorityModelID = UsingModel.ModelID;
+            ModelListManager.RefreshModelList(priorityModelID);
 
             InitializeModelSelectorUI();
         }
@@ -50,7 +55,10 @@ namespace DuckovCustomModel
             var unpatched = UnpatchAll();
             if (!unpatched) ModLogger.LogError("Unable to remove Harmony patches, the mod may not unload correctly.");
 
+            LevelManager.OnLevelBeginInitializing -= LevelManager_OnLevelBeginInitializing;
             LevelManager.OnAfterLevelInitialized -= LevelManager_OnAfterLevelInitialized;
+
+            ModelListManager.CancelRefresh();
 
             if (_modelSelectorUI == null) return;
             Destroy(_modelSelectorUI);
@@ -114,6 +122,14 @@ namespace DuckovCustomModel
         {
             UIConfig = null;
             UsingModel = null;
+        }
+
+        private void LevelManager_OnLevelBeginInitializing()
+        {
+            string? priorityModelID = null;
+            if (UsingModel != null && !string.IsNullOrEmpty(UsingModel.ModelID)) priorityModelID = UsingModel.ModelID;
+
+            ModelListManager.RefreshModelList(priorityModelID);
         }
 
         private void LevelManager_OnAfterLevelInitialized()

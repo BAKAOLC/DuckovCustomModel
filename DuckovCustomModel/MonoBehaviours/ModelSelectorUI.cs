@@ -25,6 +25,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private bool _isRefreshing;
         private bool _isWaitingForKeyInput;
         private Text? _keyButtonText;
+        private GameObject? _loadingStatusText;
         private ModelHandler? _modelHandler;
         private GameObject? _modelListContent;
         private ScrollRect? _modelScrollRect;
@@ -48,6 +49,10 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             _uiConfig = ModBehaviour.Instance?.UIConfig;
             _usingModel = ModBehaviour.Instance?.UsingModel;
+
+            ModelListManager.OnRefreshStarted += OnModelListRefreshStarted;
+            ModelListManager.OnRefreshCompleted += OnModelListRefreshCompleted;
+            ModelListManager.OnRefreshProgress += OnModelListRefreshProgress;
         }
 
         private void Update()
@@ -98,6 +103,44 @@ namespace DuckovCustomModel.MonoBehaviours
             _refreshCancellationTokenSource?.Cancel();
             _refreshCancellationTokenSource?.Dispose();
             _refreshCancellationTokenSource = null;
+
+            ModelListManager.OnRefreshStarted -= OnModelListRefreshStarted;
+            ModelListManager.OnRefreshCompleted -= OnModelListRefreshCompleted;
+            ModelListManager.OnRefreshProgress -= OnModelListRefreshProgress;
+        }
+
+        private void OnModelListRefreshStarted()
+        {
+            _isRefreshing = true;
+            UpdateRefreshButtonState(true);
+
+            if (_modelListContent != null) _modelListContent.SetActive(false);
+            if (_loadingStatusText != null)
+            {
+                _loadingStatusText.SetActive(true);
+                var statusText = _loadingStatusText.GetComponent<Text>();
+                if (statusText != null) statusText.text = "正在加载模型列表...";
+            }
+        }
+
+        private void OnModelListRefreshCompleted()
+        {
+            _isRefreshing = false;
+            UpdateRefreshButtonState(false);
+
+            if (_loadingStatusText != null) _loadingStatusText.SetActive(false);
+            if (_modelListContent != null) _modelListContent.SetActive(true);
+
+            RefreshModelList();
+        }
+
+        private void OnModelListRefreshProgress(string message)
+        {
+            if (_loadingStatusText != null)
+            {
+                var statusText = _loadingStatusText.GetComponent<Text>();
+                if (statusText != null) statusText.text = message;
+            }
         }
 
         private void InitializeUI()
@@ -258,6 +301,21 @@ namespace DuckovCustomModel.MonoBehaviours
             sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
             _modelScrollRect.content = contentRect;
+
+            _loadingStatusText = new("LoadingStatus", typeof(Text));
+            _loadingStatusText.transform.SetParent(scrollView.transform, false);
+            var statusText = _loadingStatusText.GetComponent<Text>();
+            statusText.text = "";
+            statusText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            statusText.fontSize = 16;
+            statusText.color = Color.white;
+            statusText.alignment = TextAnchor.MiddleCenter;
+            var statusRect = _loadingStatusText.GetComponent<RectTransform>();
+            statusRect.anchorMin = new(0, 0);
+            statusRect.anchorMax = new(1, 1);
+            statusRect.offsetMin = Vector2.zero;
+            statusRect.offsetMax = Vector2.zero;
+            _loadingStatusText.SetActive(false);
         }
 
         private void BuildCloseButton()
@@ -519,11 +577,14 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (_isRefreshing) return;
 
-            ModelManager.UpdateModelBundles();
-            RefreshModelList();
+            string? priorityModelID = null;
+            if (_usingModel != null && !string.IsNullOrEmpty(_usingModel.ModelID))
+                priorityModelID = _usingModel.ModelID;
+
+            ModelListManager.RefreshModelList(priorityModelID);
         }
 
-        private void RefreshModelList()
+        public void RefreshModelList()
         {
             if (_isRefreshing) return;
 
@@ -605,6 +666,7 @@ namespace DuckovCustomModel.MonoBehaviours
                 linkedCts?.Dispose();
             }
         }
+
 
         private async UniTask ApplyModelAfterRefresh(string? previousModelID, CancellationToken cancellationToken)
         {
@@ -996,8 +1058,6 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
-            ModelManager.UpdateModelBundles();
-            RefreshModelList();
             UpdateModelHandler();
 
             _uiActive = true;
