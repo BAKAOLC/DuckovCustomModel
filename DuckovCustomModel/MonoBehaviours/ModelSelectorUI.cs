@@ -157,6 +157,7 @@ namespace DuckovCustomModel.MonoBehaviours
             BuildModelList();
             BuildSettings();
             BuildCloseButton();
+            BuildRefreshButton();
         }
 
         private void BuildTitle()
@@ -276,6 +277,46 @@ namespace DuckovCustomModel.MonoBehaviours
 
             var button = closeButton.GetComponent<Button>();
             button.onClick.AddListener(HidePanel);
+        }
+
+        private void BuildRefreshButton()
+        {
+            if (_panelRoot == null) return;
+
+            var refreshButton = new GameObject("RefreshButton", typeof(Image), typeof(Button));
+            refreshButton.transform.SetParent(_panelRoot.transform, false);
+            var refreshImage = refreshButton.GetComponent<Image>();
+            refreshImage.color = new(0.2f, 0.3f, 0.4f, 1);
+
+            var refreshRect = refreshButton.GetComponent<RectTransform>();
+            refreshRect.anchorMin = new(1, 0);
+            refreshRect.anchorMax = new(1, 0);
+            refreshRect.pivot = new(1, 0);
+            refreshRect.anchoredPosition = new(-10, 10);
+            refreshRect.sizeDelta = new(100, 30);
+
+            var refreshText = new GameObject("Text", typeof(Text));
+            refreshText.transform.SetParent(refreshButton.transform, false);
+            var textComponent = refreshText.GetComponent<Text>();
+            textComponent.text = "刷新";
+            textComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            textComponent.fontSize = 14;
+            textComponent.color = Color.white;
+            textComponent.alignment = TextAnchor.MiddleCenter;
+            var textRect = refreshText.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.sizeDelta = Vector2.zero;
+
+            var button = refreshButton.GetComponent<Button>();
+            var colors = button.colors;
+            colors.normalColor = new(1, 1, 1, 1);
+            colors.highlightedColor = new(0.4f, 0.5f, 0.6f, 1);
+            colors.pressedColor = new(0.3f, 0.4f, 0.5f, 1);
+            colors.selectedColor = new(0.4f, 0.5f, 0.6f, 1);
+            button.colors = colors;
+
+            button.onClick.AddListener(OnRefreshButtonClicked);
         }
 
         private void BuildSettings()
@@ -457,6 +498,13 @@ namespace DuckovCustomModel.MonoBehaviours
             _uiConfig.HideOriginalEquipment = value;
             ConfigManager.SaveConfigToFile(_uiConfig, "UIConfig.json");
             ModLogger.Log($"HideOriginalEquipment setting changed to: {value}");
+        }
+
+        private void OnRefreshButtonClicked()
+        {
+            ModelManager.UpdateModelBundles();
+            RefreshModelList();
+            ModLogger.Log("Model list refreshed.");
         }
 
         private void RefreshModelList()
@@ -785,6 +833,7 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
+            ModelManager.UpdateModelBundles();
             RefreshModelList();
             UpdateModelHandler();
 
