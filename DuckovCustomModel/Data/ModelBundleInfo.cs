@@ -10,12 +10,16 @@ namespace DuckovCustomModel.Data
 
         public ModelInfo[] Models { get; set; } = [];
 
+        [JsonIgnore] public string DirectoryPath { get; private set; } = string.Empty;
+
         public static ModelBundleInfo? LoadFromDirectory(string directoryPath)
         {
             var infoFilePath = Path.Combine(directoryPath, "bundleinfo.json");
             if (!File.Exists(infoFilePath)) return null;
             var json = File.ReadAllText(infoFilePath);
-            return JsonConvert.DeserializeObject<ModelBundleInfo>(json);
+            var info = JsonConvert.DeserializeObject<ModelBundleInfo>(json);
+            if (info != null) info.DirectoryPath = directoryPath;
+            return info;
         }
     }
 }

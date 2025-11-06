@@ -2,7 +2,9 @@
 using System.Reflection;
 using DuckovCustomModel.Configs;
 using DuckovCustomModel.Managers;
+using DuckovCustomModel.MonoBehaviours;
 using HarmonyLib;
+using UnityEngine;
 
 namespace DuckovCustomModel
 {
@@ -10,6 +12,7 @@ namespace DuckovCustomModel
     {
         public static ModBehaviour? Instance;
         private Harmony? _harmony;
+        private ModelSelectorUI? _modelSelectorUI;
         public UIConfig? UIConfig;
         public UsingModel? UsingModel;
 
@@ -36,6 +39,8 @@ namespace DuckovCustomModel
             LevelManager.OnAfterLevelInitialized += LevelManager_OnAfterLevelInitialized;
 
             ModelManager.UpdateModelBundles();
+
+            InitializeModelSelectorUI();
         }
 
         private void OnDisable()
@@ -46,6 +51,10 @@ namespace DuckovCustomModel
             if (!unpatched) ModLogger.LogError("Unable to remove Harmony patches, the mod may not unload correctly.");
 
             LevelManager.OnAfterLevelInitialized -= LevelManager_OnAfterLevelInitialized;
+
+            if (_modelSelectorUI == null) return;
+            Destroy(_modelSelectorUI);
+            _modelSelectorUI = null;
         }
 
         private void OnDestroy()
@@ -129,6 +138,16 @@ namespace DuckovCustomModel
                 return;
 
             modelHandler.InitializeCustomModel(bundleInfo, modelInfo);
+        }
+
+        private void InitializeModelSelectorUI()
+        {
+            if (_modelSelectorUI != null) return;
+
+            var uiObject = new GameObject("ModelSelectorUI");
+            _modelSelectorUI = uiObject.AddComponent<ModelSelectorUI>();
+            DontDestroyOnLoad(uiObject);
+            ModLogger.Log("ModelSelectorUI initialized.");
         }
     }
 }

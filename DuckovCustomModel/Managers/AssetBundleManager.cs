@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using DuckovCustomModel.Data;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -13,10 +14,10 @@ namespace DuckovCustomModel.Managers
 
         public static AssetBundle? GetOrLoadAssetBundle(ModelBundleInfo bundleInfo, bool forceReload = false)
         {
-            var bundlePath = bundleInfo.BundlePath;
-            if (string.IsNullOrEmpty(bundlePath))
+            var bundlePath = Path.Combine(bundleInfo.DirectoryPath, bundleInfo.BundlePath);
+            if (string.IsNullOrEmpty(bundlePath) || !File.Exists(bundlePath))
             {
-                Debug.LogError("AssetBundleManager: bundlePath is null or empty.");
+                ModLogger.LogError($"AssetBundleManager: AssetBundle file not found at path: {bundlePath}");
                 return null;
             }
 
@@ -49,6 +50,12 @@ namespace DuckovCustomModel.Managers
             }
         }
 
+        public static void UnloadAllAssetBundles(bool unloadAllLoadedObjects = false)
+        {
+            foreach (var bundle in LoadedBundles.Values) bundle.Unload(unloadAllLoadedObjects);
+            LoadedBundles.Clear();
+        }
+
         public static T? LoadAssetFromBundle<T>(ModelBundleInfo bundleInfo, string assetPath) where T : Object
         {
             var bundle = GetOrLoadAssetBundle(bundleInfo);
@@ -77,15 +84,60 @@ namespace DuckovCustomModel.Managers
 
         public static Texture2D? LoadThumbnailTexture(ModelBundleInfo bundleInfo, ModelInfo modelInfo)
         {
-            return string.IsNullOrEmpty(modelInfo.ThumbnailPath)
-                ? null
-                : LoadAssetFromBundle<Texture2D>(bundleInfo, modelInfo.ThumbnailPath);
+            if (string.IsNullOrEmpty(modelInfo.ThumbnailPath)) return null;
+
+            try
+            {
+                if (Path.IsPathRooted(modelInfo.ThumbnailPath)) return LoadTextureFromFile(modelInfo.ThumbnailPath);
+
+                var bundle = GetOrLoadAssetBundle(bundleInfo);
+                if (bundle != null && CheckAssetExistsInBundle(bundle, modelInfo.ThumbnailPath))
+                {
+                    var thumbnailFromBundle = LoadAssetFromBundle<Texture2D>(bundleInfo, modelInfo.ThumbnailPath);
+                    if (thumbnailFromBundle != null)
+                        return thumbnailFromBundle;
+                }
+
+                var externalPath = Path.Combine(bundleInfo.DirectoryPath, modelInfo.ThumbnailPath);
+                return File.Exists(externalPath) ? LoadTextureFromFile(externalPath) : null;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError(
+                    $"AssetBundleManager: Exception while loading thumbnail '{modelInfo.ThumbnailPath}'. Exception: {ex}");
+                return null;
+            }
         }
 
-        public static void UnloadAllAssetBundles(bool unloadAllLoadedObjects = false)
+        private static bool CheckAssetExistsInBundle(AssetBundle bundle, string assetPath)
         {
-            foreach (var bundle in LoadedBundles.Values) bundle.Unload(unloadAllLoadedObjects);
-            LoadedBundles.Clear();
+            var assetNames = bundle.GetAllAssetNames();
+            return assetNames.Any(name => string.Equals(name, assetPath, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static Texture2D? LoadTextureFromFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                ModLogger.LogError($"AssetBundleManager: Thumbnail file not found: {filePath}");
+                return null;
+            }
+
+            try
+            {
+                var fileData = File.ReadAllBytes(filePath);
+                var texture = new Texture2D(2, 2);
+                if (texture.LoadImage(fileData)) return texture;
+                ModLogger.LogError($"AssetBundleManager: Failed to load image from file: {filePath}");
+                Object.Destroy(texture);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError(
+                    $"AssetBundleManager: Exception while loading texture from file '{filePath}'. Exception: {ex}");
+                return null;
+            }
         }
     }
 }
