@@ -138,13 +138,14 @@ Animator Controller 可以使用以下参数：
 - `Reloading`：是否正在装弹
 - `RightHandOut`：右手是否伸出
 - `HideOriginalEquipment`：是否隐藏原有装备（由配置项 `HideOriginalEquipment` 控制）
-- `LeftHandEquip`：左手槽位是否有装备（检测左手槽位是否有子对象）
-- `RightHandEquip`：右手槽位是否有装备（检测右手槽位是否有子对象）
-- `ArmorEquip`：护甲槽位是否有装备（检测护甲槽位是否有子对象）
-- `HelmetEquip`：头盔槽位是否有装备（检测头盔槽位是否有子对象）
-- `FaceEquip`：面部槽位是否有装备（检测面部槽位是否有子对象）
-- `BackpackEquip`：背包槽位是否有装备（检测背包槽位是否有子对象）
-- `MeleeWeaponEquip`：近战武器槽位是否有装备（检测近战武器槽位是否有子对象）
+- `LeftHandEquip`：左手槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
+- `RightHandEquip`：右手槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
+- `ArmorEquip`：护甲槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
+- `HelmetEquip`：头盔槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
+- `HeadsetEquip`：耳机槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
+- `FaceEquip`：面部槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
+- `BackpackEquip`：背包槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
+- `MeleeWeaponEquip`：近战武器槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
 - `HavePopText`：是否有弹出文本（检测弹出文本槽位是否有子对象）
 
 #### Float 类型参数
@@ -170,6 +171,14 @@ Animator Controller 可以使用以下参数：
   - `1`：正常（0.25 < WeightRate ≤ 0.75）
   - `2`：超重（0.75 < WeightRate ≤ 1.0）
   - `3`：过载（WeightRate > 1.0）
+- `LeftHandTypeID`：左手装备的 TypeID（无装备时为 `0`）
+- `RightHandTypeID`：右手装备的 TypeID（无装备时为 `0`）
+- `ArmorTypeID`：护甲装备的 TypeID（无装备时为 `0`）
+- `HelmetTypeID`：头盔装备的 TypeID（无装备时为 `0`）
+- `HeadsetTypeID`：耳机装备的 TypeID（无装备时为 `0`）
+- `FaceTypeID`：面部装备的 TypeID（无装备时为 `0`）
+- `BackpackTypeID`：背包装备的 TypeID（无装备时为 `0`）
+- `MeleeWeaponTypeID`：近战武器装备的 TypeID（无装备时为 `0`）
 
 #### Trigger 类型参数
 
