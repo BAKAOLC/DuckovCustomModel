@@ -264,12 +264,33 @@ namespace DuckovCustomModel.MonoBehaviours
             outline.effectColor = new(0.3f, 0.35f, 0.4f, 0.7f);
             outline.effectDistance = new(2, -2);
 
+            BuildVersionLabel();
             BuildTitle();
             BuildSearchField();
             BuildModelList();
             BuildSettings();
             BuildCloseButton();
             BuildRefreshButton();
+        }
+
+        private void BuildVersionLabel()
+        {
+            if (_panelRoot == null) return;
+
+            var versionLabel = new GameObject("VersionLabel", typeof(Text));
+            versionLabel.transform.SetParent(_panelRoot.transform, false);
+            var versionText = versionLabel.GetComponent<Text>();
+            versionText.text = $"v{Constant.ModVersion}";
+            versionText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            versionText.fontSize = 14;
+            versionText.color = new(0.8f, 0.8f, 0.8f, 1);
+            versionText.alignment = TextAnchor.UpperLeft;
+            var versionRect = versionLabel.GetComponent<RectTransform>();
+            versionRect.anchorMin = new(0, 1);
+            versionRect.anchorMax = new(0, 1);
+            versionRect.pivot = new(0, 1);
+            versionRect.anchoredPosition = new(10, -10);
+            versionRect.sizeDelta = new(100, 20);
         }
 
         private void BuildTitle()
