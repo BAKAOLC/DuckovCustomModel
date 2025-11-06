@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using DuckovCustomModel.Configs;
 using DuckovCustomModel.Data;
 using DuckovCustomModel.Managers;
@@ -20,6 +22,7 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private CharacterInputControl? _charInput;
         private bool _isInitialized;
+        private bool _isRefreshing;
         private bool _isWaitingForKeyInput;
         private Text? _keyButtonText;
         private ModelHandler? _modelHandler;
@@ -28,6 +31,10 @@ namespace DuckovCustomModel.MonoBehaviours
         private GameObject? _overlay;
         private GameObject? _panelRoot;
         private PlayerInput? _playerInput;
+        private Button? _refreshButton;
+        private Text? _refreshButtonText;
+        private CancellationTokenSource? _refreshCancellationTokenSource;
+        private UniTaskCompletionSource? _refreshCompletionSource;
 
         private InputField? _searchField;
         private string _searchText = string.Empty;
@@ -84,6 +91,13 @@ namespace DuckovCustomModel.MonoBehaviours
             if (!_uiActive || _panelRoot == null || !_panelRoot.activeSelf) return;
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
+        }
+
+        private void OnDestroy()
+        {
+            _refreshCancellationTokenSource?.Cancel();
+            _refreshCancellationTokenSource?.Dispose();
+            _refreshCancellationTokenSource = null;
         }
 
         private void InitializeUI()
@@ -308,15 +322,16 @@ namespace DuckovCustomModel.MonoBehaviours
             textRect.anchorMax = Vector2.one;
             textRect.sizeDelta = Vector2.zero;
 
-            var button = refreshButton.GetComponent<Button>();
-            var colors = button.colors;
+            _refreshButton = refreshButton.GetComponent<Button>();
+            var colors = _refreshButton.colors;
             colors.normalColor = new(1, 1, 1, 1);
             colors.highlightedColor = new(0.4f, 0.5f, 0.6f, 1);
             colors.pressedColor = new(0.3f, 0.4f, 0.5f, 1);
             colors.selectedColor = new(0.4f, 0.5f, 0.6f, 1);
-            button.colors = colors;
+            _refreshButton.colors = colors;
 
-            button.onClick.AddListener(OnRefreshButtonClicked);
+            _refreshButtonText = textComponent;
+            _refreshButton.onClick.AddListener(OnRefreshButtonClicked);
         }
 
         private void BuildSettings()
@@ -502,41 +517,161 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private void OnRefreshButtonClicked()
         {
+            if (_isRefreshing) return;
+
             ModelManager.UpdateModelBundles();
             RefreshModelList();
-            ModLogger.Log("Model list refreshed.");
         }
 
         private void RefreshModelList()
         {
-            if (_modelListContent == null) return;
+            if (_isRefreshing) return;
 
-            foreach (Transform child in _modelListContent.transform) Destroy(child.gameObject);
+            UpdateModelHandler();
 
-            _filteredModelBundles.Clear();
+            _refreshCancellationTokenSource = new();
+            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                _refreshCancellationTokenSource.Token,
+                this.GetCancellationTokenOnDestroy()
+            );
 
-            var searchLower = _searchText.ToLowerInvariant();
-            foreach (var bundle in ModelManager.ModelBundles
-                         .Where(bundle => string.IsNullOrEmpty(searchLower)
-                                          || bundle.BundleName.ToLowerInvariant().Contains(searchLower)
-                                          || bundle.Models.Any(m => m.Name.ToLowerInvariant()
-                                                                        .Contains(searchLower)
-                                                                    || m.ModelID.ToLowerInvariant()
-                                                                        .Contains(searchLower))))
-                _filteredModelBundles.Add(bundle);
-
-            BuildNoneModelButton();
-
-            foreach (var bundle in _filteredModelBundles)
-            foreach (var model in bundle.Models)
-                BuildModelButton(bundle, model);
+            _refreshCompletionSource = new();
+            RefreshModelListAsync(linkedCts.Token, linkedCts, _refreshCompletionSource).Forget();
         }
 
-        private void BuildModelButton(ModelBundleInfo bundle, ModelInfo model)
+        private async UniTaskVoid RefreshModelListAsync(CancellationToken cancellationToken,
+            CancellationTokenSource? linkedCts, UniTaskCompletionSource? completionSource)
+        {
+            if (_modelListContent == null)
+            {
+                completionSource?.TrySetResult();
+                linkedCts?.Dispose();
+                return;
+            }
+
+            _isRefreshing = true;
+            UpdateRefreshButtonState(true);
+
+            string? previousModelID = null;
+            if (_usingModel != null && !string.IsNullOrEmpty(_usingModel.ModelID))
+                previousModelID = _usingModel.ModelID;
+
+            try
+            {
+                foreach (Transform child in _modelListContent.transform) Destroy(child.gameObject);
+
+                _filteredModelBundles.Clear();
+
+                var searchLower = _searchText.ToLowerInvariant();
+                foreach (var bundle in ModelManager.ModelBundles
+                             .Where(bundle => string.IsNullOrEmpty(searchLower)
+                                              || bundle.BundleName.ToLowerInvariant().Contains(searchLower)
+                                              || bundle.Models.Any(m => m.Name.ToLowerInvariant()
+                                                                            .Contains(searchLower)
+                                                                        || m.ModelID.ToLowerInvariant()
+                                                                            .Contains(searchLower))))
+                    _filteredModelBundles.Add(bundle);
+
+                BuildNoneModelButton();
+
+                var totalCount = _filteredModelBundles.Sum(b => b.Models.Length);
+                var count = 0;
+                foreach (var bundle in _filteredModelBundles)
+                foreach (var model in bundle.Models)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await BuildModelButtonAsync(bundle, model, cancellationToken);
+                    count++;
+
+                    if (count % 5 != 0) continue;
+                    UpdateRefreshButtonText($"加载中... ({count}/{totalCount})");
+                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+
+                await ApplyModelAfterRefresh(previousModelID, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                completionSource?.TrySetResult();
+            }
+            finally
+            {
+                _isRefreshing = false;
+                UpdateRefreshButtonState(false);
+                completionSource?.TrySetResult();
+                _refreshCompletionSource = null;
+                linkedCts?.Dispose();
+            }
+        }
+
+        private async UniTask ApplyModelAfterRefresh(string? previousModelID, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(previousModelID) || _modelHandler == null) return;
+
+            try
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+
+                if (ModelManager.FindModelByID(previousModelID, out var bundleInfo, out var modelInfo))
+                {
+                    _modelHandler.InitializeCustomModel(bundleInfo, modelInfo);
+                    _modelHandler.ChangeToCustomModel();
+                    ModLogger.Log($"Auto-reapplied model after refresh: {modelInfo.Name} ({previousModelID})");
+                }
+                else
+                {
+                    ModLogger.LogWarning(
+                        $"Previously used model '{previousModelID}' not found after refresh. Restoring to original model.");
+                    if (_usingModel != null)
+                    {
+                        _usingModel.ModelID = string.Empty;
+                        ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
+                    }
+
+                    _modelHandler.RestoreOriginalModel();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Failed to auto-reapply model after refresh: {ex.Message}");
+                if (_modelHandler != null)
+                    try
+                    {
+                        _modelHandler.RestoreOriginalModel();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+            }
+        }
+
+        private void UpdateRefreshButtonState(bool isLoading)
+        {
+            if (_refreshButton != null) _refreshButton.interactable = !isLoading;
+
+            UpdateRefreshButtonText(isLoading ? "加载中..." : "刷新");
+        }
+
+        private void UpdateRefreshButtonText(string text)
+        {
+            if (_refreshButtonText != null) _refreshButtonText.text = text;
+        }
+
+        private async UniTask BuildModelButtonAsync(ModelBundleInfo bundle, ModelInfo model,
+            CancellationToken cancellationToken)
         {
             if (_modelListContent == null) return;
 
-            var hasError = !AssetBundleManager.CheckPrefabExists(bundle, model);
+            var (isValid, errorMessage) =
+                await AssetBundleManager.CheckBundleStatusAsync(bundle, model, cancellationToken);
+            var hasError = !isValid;
 
             var buttonObj = new GameObject($"ModelButton_{model.ModelID}", typeof(Image), typeof(Button),
                 typeof(LayoutElement));
@@ -578,7 +713,7 @@ namespace DuckovCustomModel.MonoBehaviours
             thumbnailLayoutElement.flexibleWidth = 0;
             thumbnailLayoutElement.flexibleHeight = 0;
 
-            var texture = AssetBundleManager.LoadThumbnailTexture(bundle, model);
+            var texture = await AssetBundleManager.LoadThumbnailTextureAsync(bundle, model, cancellationToken);
             if (texture != null)
             {
                 var sprite = Sprite.Create(texture, new(0, 0, texture.width, texture.height),
@@ -657,12 +792,12 @@ namespace DuckovCustomModel.MonoBehaviours
             var infoRect = infoText.GetComponent<RectTransform>();
             infoRect.sizeDelta = new(0, 18);
 
-            if (hasError)
+            if (hasError && !string.IsNullOrEmpty(errorMessage))
             {
                 var errorText = new GameObject("Error", typeof(Text));
                 errorText.transform.SetParent(contentArea.transform, false);
                 var errorTextComponent = errorText.GetComponent<Text>();
-                errorTextComponent.text = "⚠ 配置错误：Prefab不存在";
+                errorTextComponent.text = $"⚠ {errorMessage}";
                 errorTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
                 errorTextComponent.fontSize = 11;
                 errorTextComponent.fontStyle = FontStyle.Bold;
@@ -945,6 +1080,50 @@ namespace DuckovCustomModel.MonoBehaviours
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
             ModLogger.Log("Model selector panel closed.");
+
+            if (_isRefreshing && _refreshCompletionSource != null) EnsureModelAppliedAfterRefresh().Forget();
+        }
+
+        private async UniTaskVoid EnsureModelAppliedAfterRefresh()
+        {
+            try
+            {
+                if (_refreshCompletionSource != null) await _refreshCompletionSource.Task;
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+
+                UpdateModelHandler();
+
+                if (_usingModel != null && !string.IsNullOrEmpty(_usingModel.ModelID) && _modelHandler != null)
+                {
+                    if (ModelManager.FindModelByID(_usingModel.ModelID, out var bundleInfo, out var modelInfo))
+                    {
+                        try
+                        {
+                            _modelHandler.InitializeCustomModel(bundleInfo, modelInfo);
+                            _modelHandler.ChangeToCustomModel();
+                            ModLogger.Log(
+                                $"Model reapplied after window close: {modelInfo.Name} ({_usingModel.ModelID})");
+                        }
+                        catch (Exception ex)
+                        {
+                            ModLogger.LogError($"Failed to reapply model after window close: {ex.Message}");
+                            _modelHandler.RestoreOriginalModel();
+                        }
+                    }
+                    else
+                    {
+                        ModLogger.LogWarning($"Model '{_usingModel.ModelID}' not found. Restoring to original model.");
+                        _usingModel.ModelID = string.Empty;
+                        ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
+                        _modelHandler.RestoreOriginalModel();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Error ensuring model applied after refresh: {ex.Message}");
+            }
         }
 
         private IEnumerator ForceCursorFree()
