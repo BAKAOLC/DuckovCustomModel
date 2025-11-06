@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using DuckovCustomModel.Utils;
 using HarmonyLib;
 using UnityEngine;
 
@@ -61,7 +62,6 @@ namespace DuckovCustomModel.MonoBehaviours
             }
         }
 
-
         private void Update()
         {
             if (!_initialized) return;
@@ -73,6 +73,7 @@ namespace DuckovCustomModel.MonoBehaviours
             UpdateState();
             UpdateHandState();
             UpdateGunState();
+            UpdateEquipmentState();
             UpdateAttackLayerWeight();
         }
 
@@ -187,6 +188,36 @@ namespace DuckovCustomModel.MonoBehaviours
             _customAnimator.SetInteger(AnimatorWeightStateHash, weightState);
         }
 
+        private void UpdateEquipmentState()
+        {
+            if (!_initialized) return;
+            if (_customAnimator == null || _characterMainControl == null || _characterModel == null)
+                return;
+
+            var hideOriginalEquipment = ModBehaviour.Instance?.UIConfig?.HideOriginalEquipment ?? false;
+            _customAnimator.SetBool(AnimatorHideOriginalEquipmentHash, hideOriginalEquipment);
+
+            var leftHandSocket = CharacterModelSocketUtils.GetLeftHandSocket(_characterModel);
+            var rightHandSocket = CharacterModelSocketUtils.GetRightHandSocket(_characterModel);
+            var armorSocket = CharacterModelSocketUtils.GetArmorSocket(_characterModel);
+            var helmetSocket = CharacterModelSocketUtils.GetHelmetSocket(_characterModel);
+            var faceSocket = CharacterModelSocketUtils.GetFaceSocket(_characterModel);
+            var backpackSocket = CharacterModelSocketUtils.GetBackpackSocket(_characterModel);
+            var meleeWeaponSocket = CharacterModelSocketUtils.GetMeleeWeaponSocket(_characterModel);
+            var popTextSocket = CharacterModelSocketUtils.GetPopTextSocket(_characterModel);
+
+            _customAnimator.SetBool(AnimatorLeftHandEquipHash, leftHandSocket != null && leftHandSocket.childCount > 0);
+            _customAnimator.SetBool(AnimatorRightHandEquipHash,
+                rightHandSocket != null && rightHandSocket.childCount > 0);
+            _customAnimator.SetBool(AnimatorArmorEquipHash, armorSocket != null && armorSocket.childCount > 0);
+            _customAnimator.SetBool(AnimatorHelmetEquipHash, helmetSocket != null && helmetSocket.childCount > 0);
+            _customAnimator.SetBool(AnimatorFaceEquipHash, faceSocket != null && faceSocket.childCount > 0);
+            _customAnimator.SetBool(AnimatorBackpackEquipHash, backpackSocket != null && backpackSocket.childCount > 0);
+            _customAnimator.SetBool(AnimatorMeleeWeaponEquipHash,
+                meleeWeaponSocket != null && meleeWeaponSocket.childCount > 0);
+            _customAnimator.SetBool(AnimatorHavePopTextHash, popTextSocket != null && popTextSocket.childCount > 0);
+        }
+
         private void UpdateHandState()
         {
             if (!_initialized) return;
@@ -298,6 +329,16 @@ namespace DuckovCustomModel.MonoBehaviours
         private static readonly int AnimatorWaterRateHash = Animator.StringToHash("WaterRate");
         private static readonly int AnimatorWeightStateHash = Animator.StringToHash("WeightState");
         private static readonly int AnimatorWeightRateHash = Animator.StringToHash("WeightRate");
+
+        private static readonly int AnimatorHideOriginalEquipmentHash = Animator.StringToHash("HideOriginalEquipment");
+        private static readonly int AnimatorLeftHandEquipHash = Animator.StringToHash("LeftHandEquip");
+        private static readonly int AnimatorRightHandEquipHash = Animator.StringToHash("RightHandEquip");
+        private static readonly int AnimatorArmorEquipHash = Animator.StringToHash("ArmorEquip");
+        private static readonly int AnimatorHelmetEquipHash = Animator.StringToHash("HelmetEquip");
+        private static readonly int AnimatorFaceEquipHash = Animator.StringToHash("FaceEquip");
+        private static readonly int AnimatorBackpackEquipHash = Animator.StringToHash("BackpackEquip");
+        private static readonly int AnimatorMeleeWeaponEquipHash = Animator.StringToHash("MeleeWeaponEquip");
+        private static readonly int AnimatorHavePopTextHash = Animator.StringToHash("HavePopText");
 
         #endregion
     }

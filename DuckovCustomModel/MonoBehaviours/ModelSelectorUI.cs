@@ -145,6 +145,7 @@ namespace DuckovCustomModel.MonoBehaviours
             BuildTitle();
             BuildSearchField();
             BuildModelList();
+            BuildSettings();
             BuildCloseButton();
         }
 
@@ -195,7 +196,7 @@ namespace DuckovCustomModel.MonoBehaviours
             var scrollRect = scrollView.GetComponent<RectTransform>();
             scrollRect.anchorMin = new(0, 0);
             scrollRect.anchorMax = new(1, 1);
-            scrollRect.offsetMin = new(20, 60);
+            scrollRect.offsetMin = new(20, 100);
             scrollRect.offsetMax = new(-20, -120);
 
             var scrollImage = scrollView.GetComponent<Image>();
@@ -265,6 +266,70 @@ namespace DuckovCustomModel.MonoBehaviours
 
             var button = closeButton.GetComponent<Button>();
             button.onClick.AddListener(HidePanel);
+        }
+
+        private void BuildSettings()
+        {
+            if (_panelRoot == null) return;
+
+            var settingsPanel = new GameObject("SettingsPanel", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            settingsPanel.transform.SetParent(_panelRoot.transform, false);
+            var settingsRect = settingsPanel.GetComponent<RectTransform>();
+            settingsRect.anchorMin = new(0, 0);
+            settingsRect.anchorMax = new(1, 0);
+            settingsRect.pivot = new(0.5f, 0);
+            settingsRect.anchoredPosition = new(0, 10);
+            settingsRect.sizeDelta = new(-40, 40);
+
+            var layoutGroup = settingsPanel.GetComponent<HorizontalLayoutGroup>();
+            layoutGroup.padding = new(10, 10, 10, 10);
+            layoutGroup.spacing = 10;
+            layoutGroup.childAlignment = TextAnchor.MiddleLeft;
+            layoutGroup.childControlWidth = false;
+            layoutGroup.childControlHeight = false;
+            layoutGroup.childForceExpandWidth = false;
+            layoutGroup.childForceExpandHeight = false;
+
+            var toggleObj = new GameObject("HideEquipmentToggle", typeof(Toggle));
+            toggleObj.transform.SetParent(settingsPanel.transform, false);
+            var toggle = toggleObj.GetComponent<Toggle>();
+            toggle.isOn = _uiConfig?.HideOriginalEquipment ?? false;
+            toggle.onValueChanged.AddListener(OnHideEquipmentToggleChanged);
+
+            var toggleImage = toggleObj.AddComponent<Image>();
+            toggleImage.color = new(0.2f, 0.2f, 0.2f, 1);
+            var toggleRect = toggleObj.GetComponent<RectTransform>();
+            toggleRect.sizeDelta = new(20, 20);
+
+            var checkmark = new GameObject("Checkmark", typeof(Image));
+            checkmark.transform.SetParent(toggleObj.transform, false);
+            var checkmarkImage = checkmark.GetComponent<Image>();
+            checkmarkImage.color = new(0.2f, 0.8f, 0.2f, 1);
+            var checkmarkRect = checkmark.GetComponent<RectTransform>();
+            checkmarkRect.anchorMin = new(0.2f, 0.2f);
+            checkmarkRect.anchorMax = new(0.8f, 0.8f);
+            checkmarkRect.sizeDelta = Vector2.zero;
+            toggle.graphic = checkmarkImage;
+
+            var labelObj = new GameObject("Label", typeof(Text));
+            labelObj.transform.SetParent(settingsPanel.transform, false);
+            var labelText = labelObj.GetComponent<Text>();
+            labelText.text = "隐藏原有装备";
+            labelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            labelText.fontSize = 14;
+            labelText.color = Color.white;
+            labelText.alignment = TextAnchor.MiddleLeft;
+            var labelRect = labelObj.GetComponent<RectTransform>();
+            labelRect.sizeDelta = new(150, 20);
+        }
+
+        private void OnHideEquipmentToggleChanged(bool value)
+        {
+            if (_uiConfig == null) return;
+
+            _uiConfig.HideOriginalEquipment = value;
+            _uiConfig.SaveToFile("UIConfig.json");
+            ModLogger.Log($"HideOriginalEquipment setting changed to: {value}");
         }
 
         private void RefreshModelList()

@@ -3,13 +3,16 @@ using System.Linq;
 using System.Reflection;
 using DuckovCustomModel.Data;
 using DuckovCustomModel.Managers;
-using HarmonyLib;
+using DuckovCustomModel.Utils;
 using UnityEngine;
 
 namespace DuckovCustomModel.MonoBehaviours
 {
     public class ModelHandler : MonoBehaviour
     {
+        private static readonly FieldInfo[] OriginalModelSocketFieldInfos =
+            CharacterModelSocketUtils.AllSocketFields;
+
         private readonly Dictionary<FieldInfo, Transform> _customModelSockets = [];
         private readonly Dictionary<FieldInfo, Transform> _originalModelSockets = [];
 
@@ -23,6 +26,9 @@ namespace DuckovCustomModel.MonoBehaviours
         public GameObject? CustomModelInstance { get; private set; }
         public Animator? CustomAnimator { get; private set; }
         public CustomAnimatorControl? CustomAnimatorControl { get; private set; }
+
+        // ReSharper disable once ShaderLabShaderReferenceNotResolved
+        private static Shader GameDefaultShader => Shader.Find("SodaCraft/SodaCharacter");
 
         public void Initialize(CharacterMainControl characterMainControl)
         {
@@ -242,54 +248,9 @@ namespace DuckovCustomModel.MonoBehaviours
             {
                 if (material == null) continue;
                 material.shader = shader;
-                material.SetColor(EmissionColor, Color.black);
                 material.DisableKeyword("_EMISSION");
-                if (material.HasProperty(EmissionMap)) material.SetTexture(EmissionMap, null);
             }
         }
-
-        #region Shader Properties
-
-        // ReSharper disable once ShaderLabShaderReferenceNotResolved
-        private static Shader GameDefaultShader => Shader.Find("SodaCraft/SodaCharacter");
-        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
-        private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
-
-        #endregion
-
-        #region Original Sockets FieldInfos
-
-        // ReSharper disable once StringLiteralTypo
-        private static readonly FieldInfo LeftHandSocket = AccessTools.Field(typeof(CharacterModel), "lefthandSocket");
-
-        private static readonly FieldInfo
-            RightHandSocket = AccessTools.Field(typeof(CharacterModel), "rightHandSocket");
-
-        private static readonly FieldInfo ArmorSocket = AccessTools.Field(typeof(CharacterModel), "armorSocket");
-
-        // ReSharper disable once StringLiteralTypo
-        private static readonly FieldInfo HelmetSocket = AccessTools.Field(typeof(CharacterModel), "helmatSocket");
-        private static readonly FieldInfo FaceSocket = AccessTools.Field(typeof(CharacterModel), "faceSocket");
-        private static readonly FieldInfo BackpackSocket = AccessTools.Field(typeof(CharacterModel), "backpackSocket");
-
-        private static readonly FieldInfo MeleeWeaponSocket =
-            AccessTools.Field(typeof(CharacterModel), "meleeWeaponSocket");
-
-        private static readonly FieldInfo PopTextSocket = AccessTools.Field(typeof(CharacterModel), "popTextSocket");
-
-        private static readonly FieldInfo[] OriginalModelSocketFieldInfos =
-        [
-            LeftHandSocket,
-            RightHandSocket,
-            ArmorSocket,
-            HelmetSocket,
-            FaceSocket,
-            BackpackSocket,
-            MeleeWeaponSocket,
-            PopTextSocket,
-        ];
-
-        #endregion
 
         #region Custom Sockets
 
@@ -304,14 +265,14 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private static readonly Dictionary<FieldInfo, string> CustomModelSocketNames = new()
         {
-            { LeftHandSocket, LeftHandLocatorName },
-            { RightHandSocket, RightHandLocatorName },
-            { ArmorSocket, ArmorLocatorName },
-            { HelmetSocket, HelmetLocatorName },
-            { FaceSocket, FaceLocatorName },
-            { BackpackSocket, BackpackLocatorName },
-            { MeleeWeaponSocket, MeleeWeaponLocatorName },
-            { PopTextSocket, PopTextLocatorName },
+            { CharacterModelSocketUtils.LeftHandSocket, LeftHandLocatorName },
+            { CharacterModelSocketUtils.RightHandSocket, RightHandLocatorName },
+            { CharacterModelSocketUtils.ArmorSocket, ArmorLocatorName },
+            { CharacterModelSocketUtils.HelmetSocket, HelmetLocatorName },
+            { CharacterModelSocketUtils.FaceSocket, FaceLocatorName },
+            { CharacterModelSocketUtils.BackpackSocket, BackpackLocatorName },
+            { CharacterModelSocketUtils.MeleeWeaponSocket, MeleeWeaponLocatorName },
+            { CharacterModelSocketUtils.PopTextSocket, PopTextLocatorName },
         };
 
         #endregion
