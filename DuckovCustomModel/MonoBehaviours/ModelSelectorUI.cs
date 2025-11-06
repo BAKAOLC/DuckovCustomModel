@@ -135,7 +135,7 @@ namespace DuckovCustomModel.MonoBehaviours
             panelRect.anchorMin = new(0.5f, 0.5f);
             panelRect.anchorMax = new(0.5f, 0.5f);
             panelRect.pivot = new(0.5f, 0.5f);
-            panelRect.sizeDelta = new(800, 600);
+            panelRect.sizeDelta = new(1200, 700);
             panelRect.anchoredPosition = Vector2.zero;
 
             var outline = _panelRoot.AddComponent<Outline>();
@@ -204,7 +204,7 @@ namespace DuckovCustomModel.MonoBehaviours
             _modelScrollRect = scrollView.GetComponent<ScrollRect>();
             _modelScrollRect.horizontal = false;
             _modelScrollRect.vertical = true;
-            _modelScrollRect.scrollSensitivity = 20;
+            _modelScrollRect.scrollSensitivity = 1;
 
             _modelListContent = new("Content", typeof(RectTransform), typeof(VerticalLayoutGroup),
                 typeof(ContentSizeFitter));
@@ -282,6 +282,8 @@ namespace DuckovCustomModel.MonoBehaviours
                                                                         .Contains(searchLower))))
                 _filteredModelBundles.Add(bundle);
 
+            BuildNoneModelButton();
+
             foreach (var bundle in _filteredModelBundles)
             foreach (var model in bundle.Models)
                 BuildModelButton(bundle, model);
@@ -291,12 +293,14 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (_modelListContent == null) return;
 
+            var hasError = !AssetBundleManager.CheckPrefabExists(bundle, model);
+
             var buttonObj = new GameObject($"ModelButton_{model.ModelID}", typeof(Image), typeof(Button),
                 typeof(LayoutElement));
             buttonObj.transform.SetParent(_modelListContent.transform, false);
 
             var buttonImage = buttonObj.GetComponent<Image>();
-            buttonImage.color = new(0.15f, 0.18f, 0.22f, 0.8f);
+            buttonImage.color = hasError ? new(0.22f, 0.15f, 0.15f, 0.8f) : new(0.15f, 0.18f, 0.22f, 0.8f);
 
             var buttonRect = buttonObj.GetComponent<RectTransform>();
             buttonRect.sizeDelta = new(0, 100);
@@ -304,9 +308,12 @@ namespace DuckovCustomModel.MonoBehaviours
             var layoutElement = buttonObj.GetComponent<LayoutElement>();
             layoutElement.minHeight = 100;
             layoutElement.preferredHeight = 100;
+            layoutElement.flexibleWidth = 1;
 
             var outline = buttonObj.AddComponent<Outline>();
-            outline.effectColor = new(0.3f, 0.35f, 0.4f, 0.6f);
+            outline.effectColor = hasError
+                ? new(0.6f, 0.3f, 0.3f, 0.8f)
+                : new(0.3f, 0.35f, 0.4f, 0.6f);
             outline.effectDistance = new(1, -1);
 
             var thumbnailImage = new GameObject("Thumbnail", typeof(Image));
@@ -323,19 +330,28 @@ namespace DuckovCustomModel.MonoBehaviours
             var texture = AssetBundleManager.LoadThumbnailTexture(bundle, model);
             if (texture != null)
             {
-                var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
-                    new Vector2(0.5f, 0.5f));
+                var sprite = Sprite.Create(texture, new(0, 0, texture.width, texture.height),
+                    new(0.5f, 0.5f));
                 thumbnailImageComponent.sprite = sprite;
                 thumbnailImageComponent.preserveAspect = true;
             }
 
-            var contentArea = new GameObject("ContentArea", typeof(RectTransform));
+            var contentArea = new GameObject("ContentArea", typeof(RectTransform), typeof(VerticalLayoutGroup));
             contentArea.transform.SetParent(buttonObj.transform, false);
             var contentRect = contentArea.GetComponent<RectTransform>();
             contentRect.anchorMin = new(0, 0);
             contentRect.anchorMax = new(1, 1);
-            contentRect.offsetMin = new(100, 0);
-            contentRect.offsetMax = new(-10, 0);
+            contentRect.offsetMin = new(100, 10);
+            contentRect.offsetMax = new(-10, -10);
+
+            var layoutGroup = contentArea.GetComponent<VerticalLayoutGroup>();
+            layoutGroup.spacing = 2;
+            layoutGroup.childAlignment = TextAnchor.UpperLeft;
+            layoutGroup.childControlWidth = true;
+            layoutGroup.childControlHeight = false;
+            layoutGroup.childForceExpandWidth = true;
+            layoutGroup.childForceExpandHeight = false;
+            layoutGroup.padding = new(0, 0, 0, 0);
 
             var nameText = new GameObject("Name", typeof(Text));
             nameText.transform.SetParent(contentArea.transform, false);
@@ -344,14 +360,12 @@ namespace DuckovCustomModel.MonoBehaviours
             nameTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             nameTextComponent.fontSize = 16;
             nameTextComponent.fontStyle = FontStyle.Bold;
-            nameTextComponent.color = Color.white;
+            nameTextComponent.color = hasError ? new(1f, 0.6f, 0.6f, 1) : Color.white;
             nameTextComponent.alignment = TextAnchor.UpperLeft;
+            nameTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
+            nameTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
             var nameRect = nameText.GetComponent<RectTransform>();
-            nameRect.anchorMin = new(0, 0.5f);
-            nameRect.anchorMax = new(1, 1);
-            nameRect.pivot = new(0, 1);
-            nameRect.offsetMin = Vector2.zero;
-            nameRect.offsetMax = Vector2.zero;
+            nameRect.sizeDelta = new(0, 20);
 
             var infoText = new GameObject("Info", typeof(Text));
             infoText.transform.SetParent(contentArea.transform, false);
@@ -364,14 +378,29 @@ namespace DuckovCustomModel.MonoBehaviours
             infoTextComponent.text = infoTextStr;
             infoTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             infoTextComponent.fontSize = 12;
-            infoTextComponent.color = new(0.8f, 0.8f, 0.8f, 1);
+            infoTextComponent.color = hasError ? new(1f, 0.7f, 0.7f, 1) : new(0.8f, 0.8f, 0.8f, 1);
             infoTextComponent.alignment = TextAnchor.UpperLeft;
+            infoTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
+            infoTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
             var infoRect = infoText.GetComponent<RectTransform>();
-            infoRect.anchorMin = new(0, 0.25f);
-            infoRect.anchorMax = new(1, 0.5f);
-            infoRect.pivot = new(0, 0.5f);
-            infoRect.offsetMin = Vector2.zero;
-            infoRect.offsetMax = Vector2.zero;
+            infoRect.sizeDelta = new(0, 18);
+
+            if (hasError)
+            {
+                var errorText = new GameObject("Error", typeof(Text));
+                errorText.transform.SetParent(contentArea.transform, false);
+                var errorTextComponent = errorText.GetComponent<Text>();
+                errorTextComponent.text = "⚠ 配置错误：Prefab不存在";
+                errorTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                errorTextComponent.fontSize = 11;
+                errorTextComponent.fontStyle = FontStyle.Bold;
+                errorTextComponent.color = new(1f, 0.4f, 0.4f, 1);
+                errorTextComponent.alignment = TextAnchor.UpperLeft;
+                errorTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
+                errorTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
+                var errorRect = errorText.GetComponent<RectTransform>();
+                errorRect.sizeDelta = new(0, 16);
+            }
 
             if (!string.IsNullOrEmpty(model.Description))
             {
@@ -386,22 +415,74 @@ namespace DuckovCustomModel.MonoBehaviours
                 descTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
                 descTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
                 var descRect = descText.GetComponent<RectTransform>();
-                descRect.anchorMin = new(0, 0);
-                descRect.anchorMax = new(1, 0.25f);
-                descRect.pivot = new(0, 0.5f);
-                descRect.offsetMin = Vector2.zero;
-                descRect.offsetMax = Vector2.zero;
+                descRect.sizeDelta = new(0, 0);
+                var descLayoutElement = descText.AddComponent<LayoutElement>();
+                descLayoutElement.flexibleHeight = 1;
             }
 
             var button = buttonObj.GetComponent<Button>();
             var colors = button.colors;
             colors.normalColor = new(1, 1, 1, 1);
-            colors.highlightedColor = new(0.5f, 0.7f, 0.9f, 1);
-            colors.pressedColor = new(0.4f, 0.6f, 0.8f, 1);
-            colors.selectedColor = new(0.5f, 0.7f, 0.9f, 1);
+            colors.highlightedColor = hasError ? new(0.7f, 0.5f, 0.5f, 1) : new(0.5f, 0.7f, 0.9f, 1);
+            colors.pressedColor = hasError ? new(0.6f, 0.4f, 0.4f, 1) : new(0.4f, 0.6f, 0.8f, 1);
+            colors.selectedColor = hasError ? new(0.7f, 0.5f, 0.5f, 1) : new(0.5f, 0.7f, 0.9f, 1);
             button.colors = colors;
 
+            button.interactable = !hasError;
             button.onClick.AddListener(() => OnModelSelected(bundle, model));
+        }
+
+        private void BuildNoneModelButton()
+        {
+            if (_modelListContent == null) return;
+
+            var buttonObj = new GameObject("NoneModelButton", typeof(Image), typeof(Button),
+                typeof(LayoutElement));
+            buttonObj.transform.SetParent(_modelListContent.transform, false);
+            buttonObj.transform.SetAsFirstSibling();
+
+            var buttonImage = buttonObj.GetComponent<Image>();
+            buttonImage.color = new(0.2f, 0.15f, 0.15f, 0.8f);
+
+            var buttonRect = buttonObj.GetComponent<RectTransform>();
+            buttonRect.sizeDelta = new(0, 80);
+
+            var layoutElement = buttonObj.GetComponent<LayoutElement>();
+            layoutElement.minHeight = 80;
+            layoutElement.preferredHeight = 80;
+            layoutElement.flexibleWidth = 1;
+
+            var outline = buttonObj.AddComponent<Outline>();
+            outline.effectColor = new(0.4f, 0.3f, 0.3f, 0.6f);
+            outline.effectDistance = new(1, -1);
+
+            var nameText = new GameObject("Name", typeof(Text));
+            nameText.transform.SetParent(buttonObj.transform, false);
+            var nameTextComponent = nameText.GetComponent<Text>();
+            nameTextComponent.text = "不使用模型（恢复原始模型）";
+            nameTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            nameTextComponent.fontSize = 16;
+            nameTextComponent.fontStyle = FontStyle.Bold;
+            nameTextComponent.color = Color.white;
+            nameTextComponent.alignment = TextAnchor.MiddleCenter;
+            nameTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
+            nameTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
+            var nameRect = nameText.GetComponent<RectTransform>();
+            nameRect.anchorMin = Vector2.zero;
+            nameRect.anchorMax = Vector2.one;
+            nameRect.pivot = new(0.5f, 0.5f);
+            nameRect.offsetMin = new(10, 0);
+            nameRect.offsetMax = new(-10, 0);
+
+            var button = buttonObj.GetComponent<Button>();
+            var colors = button.colors;
+            colors.normalColor = new(1, 1, 1, 1);
+            colors.highlightedColor = new(0.7f, 0.5f, 0.5f, 1);
+            colors.pressedColor = new(0.6f, 0.4f, 0.4f, 1);
+            colors.selectedColor = new(0.7f, 0.5f, 0.5f, 1);
+            button.colors = colors;
+
+            button.onClick.AddListener(OnNoneModelSelected);
         }
 
         private void OnModelSelected(ModelBundleInfo bundle, ModelInfo model)
@@ -419,6 +500,23 @@ namespace DuckovCustomModel.MonoBehaviours
             _modelHandler.ChangeToCustomModel();
 
             ModLogger.Log($"Selected model: {model.Name} ({model.ModelID})");
+            HidePanel();
+        }
+
+        private void OnNoneModelSelected()
+        {
+            if (_usingModel == null || _modelHandler == null)
+            {
+                ModLogger.LogError("UsingModel or ModelHandler is null.");
+                return;
+            }
+
+            _usingModel.ModelID = string.Empty;
+            _usingModel.SaveToFile("UsingModel.json");
+
+            _modelHandler.RestoreOriginalModel();
+
+            ModLogger.Log("Restored to original model.");
             HidePanel();
         }
 

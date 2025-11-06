@@ -79,6 +79,8 @@ namespace DuckovCustomModel.Managers
             if (modelHandler == null)
                 modelHandler = characterMainControl.gameObject.AddComponent<ModelHandler>();
 
+            modelHandler.Initialize(characterMainControl);
+
             return modelHandler;
         }
 

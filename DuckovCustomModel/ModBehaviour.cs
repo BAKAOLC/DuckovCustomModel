@@ -133,11 +133,16 @@ namespace DuckovCustomModel
             }
 
             if (UsingModel == null) return;
+            if (string.IsNullOrEmpty(UsingModel.ModelID)) return;
 
             if (!ModelManager.FindModelByID(UsingModel.ModelID, out var bundleInfo, out var modelInfo))
+            {
+                ModLogger.LogError($"Unable to find model with ID: {UsingModel.ModelID}");
                 return;
+            }
 
             modelHandler.InitializeCustomModel(bundleInfo, modelInfo);
+            modelHandler.ChangeToCustomModel();
         }
 
         private void InitializeModelSelectorUI()

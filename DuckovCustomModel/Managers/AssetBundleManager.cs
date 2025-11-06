@@ -109,6 +109,14 @@ namespace DuckovCustomModel.Managers
             }
         }
 
+        public static bool CheckPrefabExists(ModelBundleInfo bundleInfo, ModelInfo modelInfo)
+        {
+            if (string.IsNullOrEmpty(modelInfo.PrefabPath)) return false;
+
+            var bundle = GetOrLoadAssetBundle(bundleInfo);
+            return bundle != null && CheckAssetExistsInBundle(bundle, modelInfo.PrefabPath);
+        }
+
         private static bool CheckAssetExistsInBundle(AssetBundle bundle, string assetPath)
         {
             var assetNames = bundle.GetAllAssetNames();

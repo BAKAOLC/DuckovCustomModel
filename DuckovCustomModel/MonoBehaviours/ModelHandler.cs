@@ -24,17 +24,37 @@ namespace DuckovCustomModel.MonoBehaviours
         public Animator? CustomAnimator { get; private set; }
         public CustomAnimatorControl? CustomAnimatorControl { get; private set; }
 
-        private void Start()
+        public void Initialize(CharacterMainControl characterMainControl)
         {
-            var characterMainControl = GetComponent<CharacterMainControl>();
-            if (characterMainControl == null)
+            CharacterMainControl = characterMainControl;
+            if (CharacterMainControl == null)
             {
                 ModLogger.LogError("CharacterMainControl component not found.");
                 return;
             }
 
-            CharacterMainControl = characterMainControl;
-            Initialize();
+            OriginalCharacterModel = CharacterMainControl.characterModel;
+            if (OriginalCharacterModel == null)
+            {
+                ModLogger.LogError("No CharacterModel found on CharacterMainControl.");
+                return;
+            }
+
+            OriginalMovement = CharacterMainControl.movementControl;
+            if (OriginalMovement == null)
+            {
+                ModLogger.LogError("No Movement component found on CharacterMainControl.");
+                return;
+            }
+
+            OriginalAnimationControl = OriginalCharacterModel.GetComponent<CharacterAnimationControl>();
+            OriginalMagicBlendAnimationControl =
+                OriginalCharacterModel.GetComponent<CharacterAnimationControl_MagicBlend>();
+            if (OriginalAnimationControl == null && OriginalMagicBlendAnimationControl == null)
+                ModLogger.LogError("No CharacterAnimationControl component found on CharacterModel.");
+
+            RecordOriginalModelSockets();
+            ModLogger.Log("ModelHandler initialized successfully.");
         }
 
         public void RestoreOriginalModel()
@@ -42,7 +62,7 @@ namespace DuckovCustomModel.MonoBehaviours
             if (OriginalCharacterModel == null) return;
             if (!IsHiddenOriginalModel) return;
 
-            var customFaceInstance = GetCustomFaceInstance();
+            var customFaceInstance = GetOriginalCustomFaceInstance();
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(true);
 
             RestoreToOriginalModelSockets();
@@ -56,9 +76,8 @@ namespace DuckovCustomModel.MonoBehaviours
         public void ChangeToCustomModel()
         {
             if (OriginalCharacterModel == null) return;
-            if (IsHiddenOriginalModel) return;
 
-            var customFaceInstance = GetCustomFaceInstance();
+            var customFaceInstance = GetOriginalCustomFaceInstance();
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(false);
 
             if (CustomModelInstance != null)
@@ -91,6 +110,12 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
+            if (OriginalCharacterModel == null)
+            {
+                ModLogger.LogError("OriginalCharacterModel is not set.");
+                return;
+            }
+
             if (CustomModelInstance != null)
             {
                 Destroy(CustomModelInstance);
@@ -98,7 +123,7 @@ namespace DuckovCustomModel.MonoBehaviours
             }
 
             // Instantiate the custom model prefab
-            CustomModelInstance = Instantiate(customModelPrefab, CharacterMainControl.modelRoot);
+            CustomModelInstance = Instantiate(customModelPrefab, OriginalCharacterModel.transform);
             CustomModelInstance.name = "CustomModelInstance";
             CustomModelInstance.layer = LayerMask.NameToLayer("Default");
 
@@ -117,38 +142,9 @@ namespace DuckovCustomModel.MonoBehaviours
             RecordCustomModelSockets();
 
             ModLogger.Log("Custom model initialized successfully.");
-        }
 
-        private void Initialize()
-        {
-            if (CharacterMainControl == null)
-            {
-                ModLogger.LogError("CharacterMainControl is not set.");
-                return;
-            }
-
-            OriginalCharacterModel = CharacterMainControl.characterModel;
-            if (OriginalCharacterModel == null)
-            {
-                ModLogger.LogError("No CharacterModel found on CharacterMainControl.");
-                return;
-            }
-
-            OriginalMovement = CharacterMainControl.movementControl;
-            if (OriginalMovement == null)
-            {
-                ModLogger.LogError("No Movement component found on CharacterMainControl.");
-                return;
-            }
-
-            OriginalAnimationControl = OriginalCharacterModel.GetComponent<CharacterAnimationControl>();
-            OriginalMagicBlendAnimationControl =
-                OriginalCharacterModel.GetComponent<CharacterAnimationControl_MagicBlend>();
-            if (OriginalAnimationControl == null && OriginalMagicBlendAnimationControl == null)
-                ModLogger.LogError("No CharacterAnimationControl component found on CharacterModel.");
-
-            RecordOriginalModelSockets();
-            ModLogger.Log("ModelHandler initialized successfully.");
+            if (IsHiddenOriginalModel)
+                ChangeToCustomModel();
         }
 
         private void RecordOriginalModelSockets()
@@ -189,9 +185,9 @@ namespace DuckovCustomModel.MonoBehaviours
             foreach (var kvp in _customModelSockets) ReplaceModelSocket(kvp.Key, kvp.Value);
         }
 
-        private Transform? GetCustomFaceInstance()
+        private Transform? GetOriginalCustomFaceInstance()
         {
-            return CustomModelInstance == null ? null : CustomModelInstance.transform.Find("CustomFaceInstance");
+            return OriginalCharacterModel == null ? null : OriginalCharacterModel.transform.Find("CustomFaceInstance");
         }
 
         private void ReplaceModelSocket(FieldInfo socketField, Transform? newSocket)
