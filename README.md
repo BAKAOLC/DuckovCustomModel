@@ -121,6 +121,36 @@ UI 界面相关配置。
   - 也可以是模型包文件夹下的外部文件路径（如 `"thumbnail.png"`）
 - `PrefabPath`（必需）：模型 Prefab 在 AssetBundle 内的资源路径（如 `"Assets/Model.prefab"`）
 
+## 定位锚点
+
+为了确保游戏中的装备（武器、护甲、背包等）能够正确绑定到自定义模型上，模型 Prefab 需要包含相应的定位锚点（Locator）GameObject。
+
+### 必需的定位锚点
+
+模型 Prefab 的子对象中需要包含以下名称的 Transform 作为定位锚点：
+
+- `LeftHandLocator`：左手定位锚点，用于绑定左手装备
+- `RightHandLocator`：右手定位锚点，用于绑定右手装备
+- `ArmorLocator`：护甲定位锚点，用于绑定护甲装备
+- `HelmetLocator`：头盔定位锚点，用于绑定头盔装备
+- `FaceLocator`：面部定位锚点，用于绑定面部装备
+- `BackpackLocator`：背包定位锚点，用于绑定背包装备
+- `MeleeWeaponLocator`：近战武器定位锚点，用于绑定近战武器装备
+- `PopTextLocator`：弹出文本定位锚点，用于显示弹出文本
+
+### 定位锚点的作用
+
+- 模组会自动在自定义模型中搜索这些定位锚点
+- 找到的定位锚点会被设置为游戏装备系统的绑定点
+- 装备会按照定位锚点的位置和旋转进行绑定
+- 如果某个定位锚点不存在，对应的装备将无法正确显示在自定义模型上
+
+### 注意事项
+
+- 定位锚点的名称必须**完全匹配**（区分大小写）
+- 定位锚点可以是空的 GameObject，只需要设置正确的位置和旋转
+- 建议根据原始模型的装备位置来设置定位锚点的位置
+
 ## 动画器配置
 
 自定义模型 Prefab 需要包含 `Animator` 组件，并配置相应的 Animator Controller。

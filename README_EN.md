@@ -121,6 +121,36 @@ Model Bundle Folder/
   - Can also be an external file path relative to the model bundle folder (e.g., `"thumbnail.png"`)
 - `PrefabPath` (required): Model Prefab resource path inside the AssetBundle (e.g., `"Assets/Model.prefab"`)
 
+## Locator Points
+
+To ensure that equipment (weapons, armor, backpacks, etc.) in the game can be correctly bound to custom models, the model Prefab needs to include corresponding locator point GameObjects.
+
+### Required Locator Points
+
+The model Prefab's child objects need to include Transforms with the following names as locator points:
+
+- `LeftHandLocator`: Left hand locator point for binding left hand equipment
+- `RightHandLocator`: Right hand locator point for binding right hand equipment
+- `ArmorLocator`: Armor locator point for binding armor equipment
+- `HelmetLocator`: Helmet locator point for binding helmet equipment
+- `FaceLocator`: Face locator point for binding face equipment
+- `BackpackLocator`: Backpack locator point for binding backpack equipment
+- `MeleeWeaponLocator`: Melee weapon locator point for binding melee weapon equipment
+- `PopTextLocator`: Pop text locator point for displaying pop text
+
+### Function of Locator Points
+
+- The mod automatically searches for these locator points in custom models
+- Found locator points will be set as binding points for the game's equipment system
+- Equipment will be bound according to the position and rotation of the locator points
+- If a locator point does not exist, the corresponding equipment will not display correctly on the custom model
+
+### Notes
+
+- Locator point names must **exactly match** (case-sensitive)
+- Locator points can be empty GameObjects, just need to set the correct position and rotation
+- It is recommended to set locator point positions based on the original model's equipment positions
+
 ## Animator Configuration
 
 Custom model Prefabs need to include an `Animator` component and configure the corresponding Animator Controller.
