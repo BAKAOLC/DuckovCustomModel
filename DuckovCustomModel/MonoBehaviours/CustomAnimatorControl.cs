@@ -74,30 +74,19 @@ namespace DuckovCustomModel.MonoBehaviours
             UpdateHandState();
             UpdateGunState();
             UpdateEquipmentState();
+            UpdateEquipmentTypeID();
             UpdateAttackLayerWeight();
         }
 
         private void OnDisable()
         {
-            if (_characterModel == null) return;
-            var equipmentSockets = new[]
-            {
-                CharacterModelSocketUtils.GetHelmetSocket(_characterModel),
-                CharacterModelSocketUtils.GetFaceSocket(_characterModel),
-                CharacterModelSocketUtils.GetArmorSocket(_characterModel),
-                CharacterModelSocketUtils.GetBackpackSocket(_characterModel),
-            };
-
-            foreach (var socket in equipmentSockets)
-            {
-                if (socket == null) continue;
-                foreach (Transform child in socket) child.gameObject.SetActive(true);
-            }
+            RestoreEquipmentVisibility();
         }
 
         private void OnDestroy()
         {
             if (_characterModel != null) _characterModel.OnAttackOrShootEvent -= OnAttack;
+            RestoreEquipmentVisibility();
         }
 
         public void Initialize(ModelHandler modelHandler)
@@ -215,32 +204,16 @@ namespace DuckovCustomModel.MonoBehaviours
             var hideOriginalEquipment = ModBehaviour.Instance?.UIConfig?.HideOriginalEquipment ?? false;
             _customAnimator.SetBool(AnimatorHideOriginalEquipmentHash, hideOriginalEquipment);
 
-            var leftHandSocket = CharacterModelSocketUtils.GetLeftHandSocket(_characterModel);
-            var rightHandSocket = CharacterModelSocketUtils.GetRightHandSocket(_characterModel);
-            var armorSocket = CharacterModelSocketUtils.GetArmorSocket(_characterModel);
-            var helmetSocket = CharacterModelSocketUtils.GetHelmetSocket(_characterModel);
-            var faceSocket = CharacterModelSocketUtils.GetFaceSocket(_characterModel);
-            var backpackSocket = CharacterModelSocketUtils.GetBackpackSocket(_characterModel);
-            var meleeWeaponSocket = CharacterModelSocketUtils.GetMeleeWeaponSocket(_characterModel);
             var popTextSocket = CharacterModelSocketUtils.GetPopTextSocket(_characterModel);
-
-            _customAnimator.SetBool(AnimatorLeftHandEquipHash, leftHandSocket != null && leftHandSocket.childCount > 0);
-            _customAnimator.SetBool(AnimatorRightHandEquipHash,
-                rightHandSocket != null && rightHandSocket.childCount > 0);
-            _customAnimator.SetBool(AnimatorArmorEquipHash, armorSocket != null && armorSocket.childCount > 0);
-            _customAnimator.SetBool(AnimatorHelmetEquipHash, helmetSocket != null && helmetSocket.childCount > 0);
-            _customAnimator.SetBool(AnimatorFaceEquipHash, faceSocket != null && faceSocket.childCount > 0);
-            _customAnimator.SetBool(AnimatorBackpackEquipHash, backpackSocket != null && backpackSocket.childCount > 0);
-            _customAnimator.SetBool(AnimatorMeleeWeaponEquipHash,
-                meleeWeaponSocket != null && meleeWeaponSocket.childCount > 0);
-            _customAnimator.SetBool(AnimatorHavePopTextHash, popTextSocket != null && popTextSocket.childCount > 0);
+            var havePopText = popTextSocket != null && popTextSocket.childCount > 0;
+            _customAnimator.SetBool(AnimatorHavePopTextHash, havePopText);
 
             var equipmentSockets = new[]
             {
-                helmetSocket,
-                faceSocket,
-                armorSocket,
-                backpackSocket,
+                CharacterModelSocketUtils.GetHelmetSocket(_characterModel),
+                CharacterModelSocketUtils.GetFaceSocket(_characterModel),
+                CharacterModelSocketUtils.GetArmorSocket(_characterModel),
+                CharacterModelSocketUtils.GetBackpackSocket(_characterModel),
             };
             var visible = !hideOriginalEquipment;
             foreach (var socket in equipmentSockets)
@@ -248,6 +221,77 @@ namespace DuckovCustomModel.MonoBehaviours
                 if (socket == null) continue;
                 foreach (Transform child in socket) child.gameObject.SetActive(visible);
             }
+        }
+
+        private void UpdateEquipmentTypeID()
+        {
+            if (!_initialized) return;
+            if (_customAnimator == null || _characterMainControl == null || _characterModel == null)
+                return;
+
+            #region Left Hand/Right Hand/Melee Weapon
+
+            var currentHoldItemAgent = _characterMainControl.CurrentHoldItemAgent;
+            var leftHandTypeID = 0;
+            var rightHandTypeID = 0;
+            var meleeWeaponTypeID = 0;
+            if (currentHoldItemAgent != null)
+                switch (currentHoldItemAgent.handheldSocket)
+                {
+                    case HandheldSocketTypes.leftHandSocket:
+                        leftHandTypeID = currentHoldItemAgent.Item.TypeID;
+                        break;
+                    case HandheldSocketTypes.meleeWeapon:
+                        meleeWeaponTypeID = currentHoldItemAgent.Item.TypeID;
+                        break;
+                    case HandheldSocketTypes.normalHandheld:
+                    default:
+                        rightHandTypeID = currentHoldItemAgent.Item.TypeID;
+                        break;
+                }
+
+            _customAnimator.SetInteger(AnimatorLeftHandTypeIDHash, leftHandTypeID);
+            _customAnimator.SetBool(AnimatorLeftHandEquipHash, leftHandTypeID > 0);
+
+            _customAnimator.SetInteger(AnimatorRightHandTypeIDHash, rightHandTypeID);
+            _customAnimator.SetBool(AnimatorRightHandEquipHash, rightHandTypeID > 0);
+
+            _customAnimator.SetInteger(AnimatorMeleeWeaponTypeIDHash, meleeWeaponTypeID);
+            _customAnimator.SetBool(AnimatorMeleeWeaponEquipHash, meleeWeaponTypeID > 0);
+
+            #endregion
+
+            #region Armor/Helmet/Face/Backpack/Headset
+
+            var characterItemSlots = _characterMainControl.CharacterItem.Slots;
+            var armorSlot = characterItemSlots.GetSlot(CharacterEquipmentController.armorHash);
+            var helmetSlot = characterItemSlots.GetSlot(CharacterEquipmentController.helmatHash);
+            var faceSlot = characterItemSlots.GetSlot(CharacterEquipmentController.faceMaskHash);
+            var backpackSlot = characterItemSlots.GetSlot(CharacterEquipmentController.backpackHash);
+            var headsetSlot = characterItemSlots.GetSlot(CharacterEquipmentController.headsetHash);
+
+            var armorTypeID = armorSlot?.Content != null ? armorSlot.Content.TypeID : 0;
+            var helmetTypeID = helmetSlot?.Content != null ? helmetSlot.Content.TypeID : 0;
+            var faceTypeID = faceSlot?.Content != null ? faceSlot.Content.TypeID : 0;
+            var backpackTypeID = backpackSlot?.Content != null ? backpackSlot.Content.TypeID : 0;
+            var headsetTypeID = headsetSlot?.Content != null ? headsetSlot.Content.TypeID : 0;
+
+            _customAnimator.SetInteger(AnimatorArmorTypeIDHash, armorTypeID);
+            _customAnimator.SetBool(AnimatorArmorEquipHash, armorTypeID > 0);
+
+            _customAnimator.SetInteger(AnimatorHelmetTypeIDHash, helmetTypeID);
+            _customAnimator.SetBool(AnimatorHelmetEquipHash, helmetTypeID > 0);
+
+            _customAnimator.SetInteger(AnimatorFaceTypeIDHash, faceTypeID);
+            _customAnimator.SetBool(AnimatorFaceEquipHash, faceTypeID > 0);
+
+            _customAnimator.SetInteger(AnimatorBackpackTypeIDHash, backpackTypeID);
+            _customAnimator.SetBool(AnimatorBackpackEquipHash, backpackTypeID > 0);
+
+            _customAnimator.SetInteger(AnimatorHeadsetTypeIDHash, headsetTypeID);
+            _customAnimator.SetBool(AnimatorHeadsetEquipHash, headsetTypeID > 0);
+
+            #endregion
         }
 
         private void UpdateHandState()
@@ -341,6 +385,24 @@ namespace DuckovCustomModel.MonoBehaviours
                 _customAnimator.SetTrigger(AnimatorAttackHash);
         }
 
+        private void RestoreEquipmentVisibility()
+        {
+            if (_characterModel == null) return;
+            var equipmentSockets = new[]
+            {
+                CharacterModelSocketUtils.GetHelmetSocket(_characterModel),
+                CharacterModelSocketUtils.GetFaceSocket(_characterModel),
+                CharacterModelSocketUtils.GetArmorSocket(_characterModel),
+                CharacterModelSocketUtils.GetBackpackSocket(_characterModel),
+            };
+
+            foreach (var socket in equipmentSockets)
+            {
+                if (socket == null) continue;
+                foreach (Transform child in socket) child.gameObject.SetActive(true);
+            }
+        }
+
         #region Animator Parameter Hashes
 
         private static readonly int AnimatorGroundedHash = Animator.StringToHash("Grounded");
@@ -367,10 +429,20 @@ namespace DuckovCustomModel.MonoBehaviours
         private static readonly int AnimatorRightHandEquipHash = Animator.StringToHash("RightHandEquip");
         private static readonly int AnimatorArmorEquipHash = Animator.StringToHash("ArmorEquip");
         private static readonly int AnimatorHelmetEquipHash = Animator.StringToHash("HelmetEquip");
+        private static readonly int AnimatorHeadsetEquipHash = Animator.StringToHash("HeadsetEquip");
         private static readonly int AnimatorFaceEquipHash = Animator.StringToHash("FaceEquip");
         private static readonly int AnimatorBackpackEquipHash = Animator.StringToHash("BackpackEquip");
         private static readonly int AnimatorMeleeWeaponEquipHash = Animator.StringToHash("MeleeWeaponEquip");
         private static readonly int AnimatorHavePopTextHash = Animator.StringToHash("HavePopText");
+
+        private static readonly int AnimatorLeftHandTypeIDHash = Animator.StringToHash("LeftHandTypeID");
+        private static readonly int AnimatorRightHandTypeIDHash = Animator.StringToHash("RightHandTypeID");
+        private static readonly int AnimatorArmorTypeIDHash = Animator.StringToHash("ArmorTypeID");
+        private static readonly int AnimatorHelmetTypeIDHash = Animator.StringToHash("HelmetTypeID");
+        private static readonly int AnimatorHeadsetTypeIDHash = Animator.StringToHash("HeadsetTypeID");
+        private static readonly int AnimatorFaceTypeIDHash = Animator.StringToHash("FaceTypeID");
+        private static readonly int AnimatorBackpackTypeIDHash = Animator.StringToHash("BackpackTypeID");
+        private static readonly int AnimatorMeleeWeaponTypeIDHash = Animator.StringToHash("MeleeWeaponTypeID");
 
         #endregion
     }
