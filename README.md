@@ -1,5 +1,7 @@
 # Duckov Custom Model
 
+[English](README_EN.md) | 中文
+
 一个用于 Duckov 游戏的自定义玩家模型模组。
 
 ## 基本功能
