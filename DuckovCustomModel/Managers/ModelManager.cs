@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using DuckovCustomModel.Configs;
 using DuckovCustomModel.Data;
 using DuckovCustomModel.MonoBehaviours;
 
@@ -67,7 +66,8 @@ namespace DuckovCustomModel.Managers
             return false;
         }
 
-        public static ModelHandler? InitializeModelHandler(CharacterMainControl characterMainControl, bool isPet = false)
+        public static ModelHandler? InitializeModelHandler(CharacterMainControl characterMainControl,
+            bool isPet = false)
         {
             if (characterMainControl == null)
             {

@@ -195,7 +195,7 @@ namespace DuckovCustomModel.MonoBehaviours
             if (_customAnimator == null || _characterMainControl == null || _characterModel == null)
                 return;
 
-            bool hideOriginalEquipment = false;
+            var hideOriginalEquipment = false;
             if (ModBehaviour.Instance?.UIConfig != null && _modelHandler != null)
             {
                 var isPet = _modelHandler.IsPet;
@@ -203,6 +203,7 @@ namespace DuckovCustomModel.MonoBehaviours
                     ? ModBehaviour.Instance.UIConfig.HidePetEquipment
                     : ModBehaviour.Instance.UIConfig.HideCharacterEquipment;
             }
+
             _customAnimator.SetBool(AnimatorHideOriginalEquipmentHash, hideOriginalEquipment);
 
             var popTextSocket = CharacterModelSocketUtils.GetPopTextSocket(_characterModel);

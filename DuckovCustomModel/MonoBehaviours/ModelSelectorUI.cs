@@ -383,7 +383,7 @@ namespace DuckovCustomModel.MonoBehaviours
             var templateObj = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
             templateObj.transform.SetParent(dropdownObj.transform, false);
             var templateImage = templateObj.GetComponent<Image>();
-            templateImage.color = new(0.1f, 0.12f, 0.15f, 0.95f);
+            templateImage.color = new(0.15f, 0.18f, 0.22f, 0.98f);
             var templateRect = templateObj.GetComponent<RectTransform>();
             templateRect.anchorMin = new(0, 0);
             templateRect.anchorMax = new(1, 0);
@@ -413,6 +413,8 @@ namespace DuckovCustomModel.MonoBehaviours
 
             var itemObj = new GameObject("Item", typeof(RectTransform), typeof(Toggle), typeof(Image));
             itemObj.transform.SetParent(contentObj.transform, false);
+            var itemImage = itemObj.GetComponent<Image>();
+            itemImage.color = new(0.15f, 0.18f, 0.22f, 1f);
             var itemRect = itemObj.GetComponent<RectTransform>();
             itemRect.anchorMin = new(0, 0.5f);
             itemRect.anchorMax = new(1, 0.5f);
@@ -423,7 +425,7 @@ namespace DuckovCustomModel.MonoBehaviours
             var itemLabelText = itemLabelObj.GetComponent<Text>();
             itemLabelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             itemLabelText.fontSize = 14;
-            itemLabelText.color = Color.white;
+            itemLabelText.color = new(0.95f, 0.95f, 0.95f, 1f);
             itemLabelText.alignment = TextAnchor.MiddleLeft;
             var itemLabelRect = itemLabelObj.GetComponent<RectTransform>();
             itemLabelRect.anchorMin = Vector2.zero;
@@ -432,7 +434,14 @@ namespace DuckovCustomModel.MonoBehaviours
             itemLabelRect.offsetMax = new(-10, 0);
 
             var toggle = itemObj.GetComponent<Toggle>();
-            toggle.targetGraphic = itemObj.GetComponent<Image>();
+            var colors = toggle.colors;
+            colors.normalColor = new(0.15f, 0.18f, 0.22f, 1f);
+            colors.highlightedColor = new(0.25f, 0.3f, 0.35f, 1f);
+            colors.pressedColor = new(0.2f, 0.25f, 0.3f, 1f);
+            colors.selectedColor = new(0.25f, 0.3f, 0.35f, 1f);
+            colors.disabledColor = new(0.1f, 0.12f, 0.15f, 0.5f);
+            toggle.colors = colors;
+            toggle.targetGraphic = itemImage;
             toggle.graphic = itemLabelText;
 
             _targetTypeDropdown.itemText = itemLabelText;
