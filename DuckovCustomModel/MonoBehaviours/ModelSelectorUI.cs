@@ -242,25 +242,18 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (_uiRoot == null) return;
 
-            _overlay = new("Overlay", typeof(Image));
-            _overlay.transform.SetParent(_uiRoot.transform, false);
-            var overlayImage = _overlay.GetComponent<Image>();
-            overlayImage.color = new(0, 0, 0, 0.5f);
-            var overlayRect = _overlay.GetComponent<RectTransform>();
-            overlayRect.anchorMin = Vector2.zero;
-            overlayRect.anchorMax = Vector2.one;
-            overlayRect.sizeDelta = Vector2.zero;
+            _overlay = CreateImage("Overlay", _uiRoot.transform);
+            SetupRectTransform(_overlay, Vector2.zero, Vector2.one, Vector2.zero);
+            _overlay.GetComponent<Image>().color = new(0, 0, 0, 0.5f);
 
-            _panelRoot = new("Panel", typeof(Image));
-            _panelRoot.transform.SetParent(_uiRoot.transform, false);
-            var panelImage = _panelRoot.GetComponent<Image>();
-            panelImage.color = new(0.1f, 0.12f, 0.15f, 0.95f);
+            _panelRoot = CreateImage("Panel", _uiRoot.transform);
             var panelRect = _panelRoot.GetComponent<RectTransform>();
             panelRect.anchorMin = new(0.5f, 0.5f);
             panelRect.anchorMax = new(0.5f, 0.5f);
             panelRect.pivot = new(0.5f, 0.5f);
             panelRect.sizeDelta = new(1200, 700);
             panelRect.anchoredPosition = Vector2.zero;
+            _panelRoot.GetComponent<Image>().color = new(0.1f, 0.12f, 0.15f, 0.95f);
 
             var outline = _panelRoot.AddComponent<Outline>();
             outline.effectColor = new(0.3f, 0.35f, 0.4f, 0.7f);
@@ -280,61 +273,29 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (_panelRoot == null) return;
 
-            var versionLabel = new GameObject("VersionLabel", typeof(Text));
-            versionLabel.transform.SetParent(_panelRoot.transform, false);
-            var versionText = versionLabel.GetComponent<Text>();
-            versionText.text = $"v{Constant.ModVersion}";
-            versionText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            versionText.fontSize = 14;
-            versionText.color = new(0.8f, 0.8f, 0.8f, 1);
-            versionText.alignment = TextAnchor.UpperLeft;
-            var versionRect = versionLabel.GetComponent<RectTransform>();
-            versionRect.anchorMin = new(0, 1);
-            versionRect.anchorMax = new(0, 1);
-            versionRect.pivot = new(0, 1);
-            versionRect.anchoredPosition = new(10, -10);
-            versionRect.sizeDelta = new(100, 20);
+            var versionLabel = CreateText("VersionLabel", _panelRoot.transform, $"v{Constant.ModVersion}", 14,
+                new(0.8f, 0.8f, 0.8f, 1), TextAnchor.UpperLeft);
+            SetupRectTransform(versionLabel, new(0, 1), new(0, 1), new(100, 20), new(0, 1), new(10, -10));
         }
 
         private void BuildTitle()
         {
             if (_panelRoot == null) return;
 
-            var title = new GameObject("Title", typeof(Text));
-            title.transform.SetParent(_panelRoot.transform, false);
+            var title = CreateText("Title", _panelRoot.transform, ModelSelectorUILocalization.Title, 24, Color.white,
+                TextAnchor.MiddleCenter);
             var titleText = title.GetComponent<Text>();
-            titleText.text = ModelSelectorUILocalization.Title;
-            titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            titleText.fontSize = 24;
             titleText.fontStyle = FontStyle.Bold;
-            titleText.color = Color.white;
-            titleText.alignment = TextAnchor.MiddleCenter;
-            var titleRect = title.GetComponent<RectTransform>();
-            titleRect.anchorMin = new(0, 1);
-            titleRect.anchorMax = new(1, 1);
-            titleRect.pivot = new(0.5f, 1);
-            titleRect.anchoredPosition = new(0, -20);
-            titleRect.sizeDelta = new(0, 40);
+            SetupRectTransform(title, new(0, 1), new(1, 1), new(0, 40), new(0.5f, 1), new(0, -20));
         }
 
         private void BuildTargetTypeSelector()
         {
             if (_panelRoot == null) return;
 
-            var targetTypeLabel = new GameObject("TargetTypeLabel", typeof(Text));
-            targetTypeLabel.transform.SetParent(_panelRoot.transform, false);
-            var labelText = targetTypeLabel.GetComponent<Text>();
-            labelText.text = ModelSelectorUILocalization.TargetType;
-            labelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            labelText.fontSize = 14;
-            labelText.color = Color.white;
-            labelText.alignment = TextAnchor.MiddleLeft;
-            var labelRect = targetTypeLabel.GetComponent<RectTransform>();
-            labelRect.anchorMin = new(0, 1);
-            labelRect.anchorMax = new(0, 1);
-            labelRect.pivot = new(0, 1);
-            labelRect.anchoredPosition = new(20, -70);
-            labelRect.sizeDelta = new(100, 30);
+            var targetTypeLabel = CreateText("TargetTypeLabel", _panelRoot.transform,
+                ModelSelectorUILocalization.TargetType, 14, Color.white);
+            SetupRectTransform(targetTypeLabel, new(0, 1), new(0, 1), new(100, 30), new(0, 1), new(20, -70));
 
             var dropdownObj = new GameObject("TargetTypeDropdown", typeof(Image), typeof(Dropdown));
             dropdownObj.transform.SetParent(_panelRoot.transform, false);
@@ -354,13 +315,8 @@ namespace DuckovCustomModel.MonoBehaviours
             _targetTypeDropdown.value = _currentTargetType == ModelTarget.Character ? 0 : 1;
             _targetTypeDropdown.onValueChanged.AddListener(OnTargetTypeChanged);
 
-            var labelObj = new GameObject("Label", typeof(Text));
-            labelObj.transform.SetParent(dropdownObj.transform, false);
+            var labelObj = CreateText("Label", dropdownObj.transform, "", 14, Color.white);
             var labelTextComponent = labelObj.GetComponent<Text>();
-            labelTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            labelTextComponent.fontSize = 14;
-            labelTextComponent.color = Color.white;
-            labelTextComponent.alignment = TextAnchor.MiddleLeft;
             var labelTextRect = labelObj.GetComponent<RectTransform>();
             labelTextRect.anchorMin = new(0, 0);
             labelTextRect.anchorMax = new(1, 1);
@@ -368,16 +324,10 @@ namespace DuckovCustomModel.MonoBehaviours
             labelTextRect.offsetMax = new(-25, 0);
             _targetTypeDropdown.captionText = labelTextComponent;
 
-            var arrowObj = new GameObject("Arrow", typeof(Image));
-            arrowObj.transform.SetParent(dropdownObj.transform, false);
+            var arrowObj = CreateImage("Arrow", dropdownObj.transform);
             var arrowImage = arrowObj.GetComponent<Image>();
-            arrowImage.color = Color.white;
-            var arrowRect = arrowObj.GetComponent<RectTransform>();
-            arrowRect.anchorMin = new(1, 0.5f);
-            arrowRect.anchorMax = new(1, 0.5f);
-            arrowRect.pivot = new(1, 0.5f);
-            arrowRect.anchoredPosition = new(-10, 0);
-            arrowRect.sizeDelta = new(20, 20);
+            arrowImage.color = Color.black;
+            SetupRectTransform(arrowObj, new(1, 0.5f), new(1, 0.5f), new(20, 20), new(1, 0.5f), new(-10, 0));
             _targetTypeDropdown.targetGraphic = arrowImage;
 
             var templateObj = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
@@ -420,29 +370,19 @@ namespace DuckovCustomModel.MonoBehaviours
             itemRect.anchorMax = new(1, 0.5f);
             itemRect.sizeDelta = new(0, 30);
 
-            var itemLabelObj = new GameObject("Item Label", typeof(Text));
-            itemLabelObj.transform.SetParent(itemObj.transform, false);
+            var itemLabelObj = CreateText("Item Label", itemObj.transform, "", 14,
+                new(0.95f, 0.95f, 0.95f, 1f));
             var itemLabelText = itemLabelObj.GetComponent<Text>();
-            itemLabelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            itemLabelText.fontSize = 14;
-            itemLabelText.color = new(0.95f, 0.95f, 0.95f, 1f);
-            itemLabelText.alignment = TextAnchor.MiddleLeft;
             var itemLabelRect = itemLabelObj.GetComponent<RectTransform>();
             itemLabelRect.anchorMin = Vector2.zero;
             itemLabelRect.anchorMax = Vector2.one;
             itemLabelRect.offsetMin = new(10, 0);
             itemLabelRect.offsetMax = new(-10, 0);
 
-            var checkmarkObj = new GameObject("Checkmark", typeof(Image));
-            checkmarkObj.transform.SetParent(itemObj.transform, false);
+            var checkmarkObj = CreateImage("Checkmark", itemObj.transform);
             var checkmarkImage = checkmarkObj.GetComponent<Image>();
             checkmarkImage.color = new(0.2f, 0.8f, 0.2f, 1f);
-            var checkmarkRect = checkmarkObj.GetComponent<RectTransform>();
-            checkmarkRect.anchorMin = new(0, 0.5f);
-            checkmarkRect.anchorMax = new(0, 0.5f);
-            checkmarkRect.pivot = new(0.5f, 0.5f);
-            checkmarkRect.anchoredPosition = new(5, 0);
-            checkmarkRect.sizeDelta = new(16, 16);
+            SetupRectTransform(checkmarkObj, new(0, 0.5f), new(0, 0.5f), new(16, 16), new(0.5f, 0.5f), new(5, 0));
             checkmarkObj.SetActive(false);
 
             var toggle = itemObj.GetComponent<Toggle>();
@@ -530,19 +470,9 @@ namespace DuckovCustomModel.MonoBehaviours
 
             _modelScrollRect.content = contentRect;
 
-            _loadingStatusText = new("LoadingStatus", typeof(Text));
-            _loadingStatusText.transform.SetParent(scrollView.transform, false);
-            var statusText = _loadingStatusText.GetComponent<Text>();
-            statusText.text = "";
-            statusText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            statusText.fontSize = 16;
-            statusText.color = Color.white;
-            statusText.alignment = TextAnchor.MiddleCenter;
-            var statusRect = _loadingStatusText.GetComponent<RectTransform>();
-            statusRect.anchorMin = new(0, 0);
-            statusRect.anchorMax = new(1, 1);
-            statusRect.offsetMin = Vector2.zero;
-            statusRect.offsetMax = Vector2.zero;
+            _loadingStatusText = CreateText("LoadingStatus", scrollView.transform, "", 16, Color.white,
+                TextAnchor.MiddleCenter);
+            SetupRectTransform(_loadingStatusText, new(0, 0), new(1, 1), Vector2.zero);
             _loadingStatusText.SetActive(false);
         }
 
@@ -550,74 +480,30 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (_panelRoot == null) return;
 
-            var closeButton = new GameObject("CloseButton", typeof(Image), typeof(Button));
-            closeButton.transform.SetParent(_panelRoot.transform, false);
-            var closeImage = closeButton.GetComponent<Image>();
-            closeImage.color = new(0.2f, 0.2f, 0.2f, 1);
+            var closeButton = CreateButton("CloseButton", _panelRoot.transform, HidePanel);
+            closeButton.GetComponent<Image>().color = new(0.2f, 0.2f, 0.2f, 1);
+            SetupRectTransform(closeButton, new(1, 1), new(1, 1), new(30, 30), new(1, 1), new(-10, -10));
 
-            var closeRect = closeButton.GetComponent<RectTransform>();
-            closeRect.anchorMin = new(1, 1);
-            closeRect.anchorMax = new(1, 1);
-            closeRect.pivot = new(1, 1);
-            closeRect.anchoredPosition = new(-10, -10);
-            closeRect.sizeDelta = new(30, 30);
-
-            var closeText = new GameObject("Text", typeof(Text));
-            closeText.transform.SetParent(closeButton.transform, false);
-            var textComponent = closeText.GetComponent<Text>();
-            textComponent.text = "×";
-            textComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            textComponent.fontSize = 20;
-            textComponent.color = Color.white;
-            textComponent.alignment = TextAnchor.MiddleCenter;
-            var textRect = closeText.GetComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.sizeDelta = Vector2.zero;
-
-            var button = closeButton.GetComponent<Button>();
-            button.onClick.AddListener(HidePanel);
+            var closeText = CreateText("Text", closeButton.transform, "×", 20, Color.white, TextAnchor.MiddleCenter);
+            SetupRectTransform(closeText, Vector2.zero, Vector2.one, Vector2.zero);
         }
 
         private void BuildRefreshButton()
         {
             if (_panelRoot == null) return;
 
-            var refreshButton = new GameObject("RefreshButton", typeof(Image), typeof(Button));
-            refreshButton.transform.SetParent(_panelRoot.transform, false);
-            var refreshImage = refreshButton.GetComponent<Image>();
-            refreshImage.color = new(0.2f, 0.3f, 0.4f, 1);
+            var refreshButton = CreateButton("RefreshButton", _panelRoot.transform, OnRefreshButtonClicked);
+            refreshButton.GetComponent<Image>().color = new(0.2f, 0.3f, 0.4f, 1);
+            SetupRectTransform(refreshButton, new(1, 0), new(1, 0), new(100, 30), new(1, 0), new(-10, 10));
 
-            var refreshRect = refreshButton.GetComponent<RectTransform>();
-            refreshRect.anchorMin = new(1, 0);
-            refreshRect.anchorMax = new(1, 0);
-            refreshRect.pivot = new(1, 0);
-            refreshRect.anchoredPosition = new(-10, 10);
-            refreshRect.sizeDelta = new(100, 30);
-
-            var refreshText = new GameObject("Text", typeof(Text));
-            refreshText.transform.SetParent(refreshButton.transform, false);
-            var textComponent = refreshText.GetComponent<Text>();
-            textComponent.text = ModelSelectorUILocalization.Refresh;
-            textComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            textComponent.fontSize = 14;
-            textComponent.color = Color.white;
-            textComponent.alignment = TextAnchor.MiddleCenter;
-            var textRect = refreshText.GetComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.sizeDelta = Vector2.zero;
+            var refreshText = CreateText("Text", refreshButton.transform, ModelSelectorUILocalization.Refresh, 14,
+                Color.white, TextAnchor.MiddleCenter);
+            SetupRectTransform(refreshText, Vector2.zero, Vector2.one, Vector2.zero);
 
             _refreshButton = refreshButton.GetComponent<Button>();
-            var colors = _refreshButton.colors;
-            colors.normalColor = new(1, 1, 1, 1);
-            colors.highlightedColor = new(0.4f, 0.5f, 0.6f, 1);
-            colors.pressedColor = new(0.3f, 0.4f, 0.5f, 1);
-            colors.selectedColor = new(0.4f, 0.5f, 0.6f, 1);
-            _refreshButton.colors = colors;
-
-            _refreshButtonText = textComponent;
-            _refreshButton.onClick.AddListener(OnRefreshButtonClicked);
+            SetupButtonColors(_refreshButton, new(1, 1, 1, 1), new(0.4f, 0.5f, 0.6f, 1), new(0.3f, 0.4f, 0.5f, 1),
+                new(0.4f, 0.5f, 0.6f, 1));
+            _refreshButtonText = refreshText.GetComponent<Text>();
         }
 
         private void BuildSettings()
@@ -655,39 +541,21 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (_panelRoot == null) return;
 
-            var keyLabelObj = new GameObject("KeyLabel", typeof(Text));
-            keyLabelObj.transform.SetParent(settingsPanel.transform, false);
-            var keyLabelText = keyLabelObj.GetComponent<Text>();
-            keyLabelText.text = ModelSelectorUILocalization.Hotkey;
-            keyLabelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            keyLabelText.fontSize = 14;
-            keyLabelText.color = Color.white;
-            keyLabelText.alignment = TextAnchor.MiddleLeft;
+            var keyLabelObj = CreateText("KeyLabel", settingsPanel.transform, ModelSelectorUILocalization.Hotkey, 14,
+                Color.white);
             var keyLabelRect = keyLabelObj.GetComponent<RectTransform>();
             keyLabelRect.sizeDelta = new(80, 20);
 
-            var keyButtonObj = new GameObject("KeyButton", typeof(Image), typeof(Button));
-            keyButtonObj.transform.SetParent(settingsPanel.transform, false);
-            var keyButtonImage = keyButtonObj.GetComponent<Image>();
-            keyButtonImage.color = new(0.2f, 0.2f, 0.2f, 1);
+            var keyButtonObj = CreateButton("KeyButton", settingsPanel.transform, OnKeyButtonClicked);
+            keyButtonObj.GetComponent<Image>().color = new(0.2f, 0.2f, 0.2f, 1);
             var keyButtonRect = keyButtonObj.GetComponent<RectTransform>();
             keyButtonRect.sizeDelta = new(120, 30);
 
-            var keyButtonTextObj = new GameObject("Text", typeof(Text));
-            keyButtonTextObj.transform.SetParent(keyButtonObj.transform, false);
+            var keyButtonTextObj = CreateText("Text", keyButtonObj.transform,
+                GetKeyCodeDisplayName(_uiConfig?.ToggleKey ?? KeyCode.Backslash), 14, Color.white,
+                TextAnchor.MiddleCenter);
             _keyButtonText = keyButtonTextObj.GetComponent<Text>();
-            _keyButtonText.text = GetKeyCodeDisplayName(_uiConfig?.ToggleKey ?? KeyCode.Backslash);
-            _keyButtonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            _keyButtonText.fontSize = 14;
-            _keyButtonText.color = Color.white;
-            _keyButtonText.alignment = TextAnchor.MiddleCenter;
-            var keyButtonTextRect = keyButtonTextObj.GetComponent<RectTransform>();
-            keyButtonTextRect.anchorMin = Vector2.zero;
-            keyButtonTextRect.anchorMax = Vector2.one;
-            keyButtonTextRect.sizeDelta = Vector2.zero;
-
-            var keyButton = keyButtonObj.GetComponent<Button>();
-            keyButton.onClick.AddListener(OnKeyButtonClicked);
+            SetupRectTransform(keyButtonTextObj, Vector2.zero, Vector2.one, Vector2.zero);
         }
 
         private void OnKeyButtonClicked()
@@ -780,8 +648,7 @@ namespace DuckovCustomModel.MonoBehaviours
             var toggleRect = toggleObj.GetComponent<RectTransform>();
             toggleRect.sizeDelta = new(20, 20);
 
-            var checkmark = new GameObject("Checkmark", typeof(Image));
-            checkmark.transform.SetParent(toggleObj.transform, false);
+            var checkmark = CreateImage("Checkmark", toggleObj.transform);
             var checkmarkImage = checkmark.GetComponent<Image>();
             checkmarkImage.color = new(0.2f, 0.8f, 0.2f, 1);
             var checkmarkRect = checkmark.GetComponent<RectTransform>();
@@ -790,14 +657,7 @@ namespace DuckovCustomModel.MonoBehaviours
             checkmarkRect.sizeDelta = Vector2.zero;
             toggle.graphic = checkmarkImage;
 
-            var labelObj = new GameObject("Label", typeof(Text));
-            labelObj.transform.SetParent(settingsPanel.transform, false);
-            var labelTextComponent = labelObj.GetComponent<Text>();
-            labelTextComponent.text = labelText;
-            labelTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            labelTextComponent.fontSize = 14;
-            labelTextComponent.color = Color.white;
-            labelTextComponent.alignment = TextAnchor.MiddleLeft;
+            var labelObj = CreateText("Label", settingsPanel.transform, labelText, 14, Color.white);
             var labelRect = labelObj.GetComponent<RectTransform>();
             labelRect.sizeDelta = new(150, 20);
         }
@@ -879,11 +739,9 @@ namespace DuckovCustomModel.MonoBehaviours
                                                                             .Contains(searchLower))))
                 {
                     var compatibleModels = bundle.Models.Where(m => m.CompatibleWithType(_currentTargetType)).ToArray();
-                    if (compatibleModels.Length > 0)
-                    {
-                        var filteredBundle = bundle.CreateFilteredCopy(compatibleModels);
-                        _filteredModelBundles.Add(filteredBundle);
-                    }
+                    if (compatibleModels.Length <= 0) continue;
+                    var filteredBundle = bundle.CreateFilteredCopy(compatibleModels);
+                    _filteredModelBundles.Add(filteredBundle);
                 }
 
                 BuildNoneModelButton();
@@ -1043,12 +901,19 @@ namespace DuckovCustomModel.MonoBehaviours
                 await AssetBundleManager.CheckBundleStatusAsync(bundle, model, cancellationToken);
             var hasError = !isValid;
 
+            var isInUse = _usingModel != null && (
+                (_currentTargetType == ModelTarget.Character && _usingModel.ModelID == model.ModelID) ||
+                (_currentTargetType == ModelTarget.Pet && _usingModel.PetModelID == model.ModelID)
+            );
+
             var buttonObj = new GameObject($"ModelButton_{model.ModelID}", typeof(Image), typeof(Button),
                 typeof(LayoutElement));
             buttonObj.transform.SetParent(_modelListContent.transform, false);
 
             var buttonImage = buttonObj.GetComponent<Image>();
-            buttonImage.color = hasError ? new(0.22f, 0.15f, 0.15f, 0.8f) : new(0.15f, 0.18f, 0.22f, 0.8f);
+            Color baseColor = hasError ? new(0.22f, 0.15f, 0.15f, 0.8f) : new(0.15f, 0.18f, 0.22f, 0.8f);
+            if (isInUse && !hasError) baseColor = new(0.15f, 0.22f, 0.18f, 0.8f);
+            buttonImage.color = baseColor;
 
             var buttonRect = buttonObj.GetComponent<RectTransform>();
             buttonRect.sizeDelta = new(1140, 100);
@@ -1060,9 +925,12 @@ namespace DuckovCustomModel.MonoBehaviours
             layoutElement.flexibleWidth = 0;
 
             var outline = buttonObj.AddComponent<Outline>();
-            outline.effectColor = hasError
-                ? new(0.6f, 0.3f, 0.3f, 0.8f)
-                : new(0.3f, 0.35f, 0.4f, 0.6f);
+            if (isInUse && !hasError)
+                outline.effectColor = new(0.3f, 0.6f, 0.4f, 0.8f);
+            else
+                outline.effectColor = hasError
+                    ? new(0.6f, 0.3f, 0.3f, 0.8f)
+                    : new(0.3f, 0.35f, 0.4f, 0.6f);
             outline.effectDistance = new(1, -1);
 
             var thumbnailImage = new GameObject("Thumbnail", typeof(Image), typeof(LayoutElement));
@@ -1130,29 +998,20 @@ namespace DuckovCustomModel.MonoBehaviours
             layoutGroup.childForceExpandHeight = false;
             layoutGroup.padding = new(0, 0, 0, 0);
 
-            var nameText = new GameObject("Name", typeof(Text));
-            nameText.transform.SetParent(contentArea.transform, false);
+            var nameText = CreateText("Name", contentArea.transform,
+                string.IsNullOrEmpty(model.Name) ? model.ModelID : model.Name, 16,
+                hasError ? new(1f, 0.6f, 0.6f, 1) : Color.white, TextAnchor.UpperLeft);
             var nameTextComponent = nameText.GetComponent<Text>();
-            nameTextComponent.text = string.IsNullOrEmpty(model.Name) ? model.ModelID : model.Name;
-            nameTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            nameTextComponent.fontSize = 16;
             nameTextComponent.fontStyle = FontStyle.Bold;
-            nameTextComponent.color = hasError ? new(1f, 0.6f, 0.6f, 1) : Color.white;
-            nameTextComponent.alignment = TextAnchor.UpperLeft;
             nameTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
             nameTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
             var nameRect = nameText.GetComponent<RectTransform>();
             nameRect.sizeDelta = new(0, 20);
 
-            var infoText = new GameObject("Info", typeof(Text));
-            infoText.transform.SetParent(contentArea.transform, false);
+            var infoText = CreateText("Info", contentArea.transform,
+                ModelSelectorUILocalization.GetModelInfo(model.ModelID, model.Author, model.Version), 12,
+                hasError ? new(1f, 0.7f, 0.7f, 1) : new(0.8f, 0.8f, 0.8f, 1), TextAnchor.UpperLeft);
             var infoTextComponent = infoText.GetComponent<Text>();
-            infoTextComponent.text =
-                ModelSelectorUILocalization.GetModelInfo(model.ModelID, model.Author, model.Version);
-            infoTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            infoTextComponent.fontSize = 12;
-            infoTextComponent.color = hasError ? new(1f, 0.7f, 0.7f, 1) : new(0.8f, 0.8f, 0.8f, 1);
-            infoTextComponent.alignment = TextAnchor.UpperLeft;
             infoTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
             infoTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
             var infoRect = infoText.GetComponent<RectTransform>();
@@ -1160,15 +1019,10 @@ namespace DuckovCustomModel.MonoBehaviours
 
             if (hasError && !string.IsNullOrEmpty(errorMessage))
             {
-                var errorText = new GameObject("Error", typeof(Text));
-                errorText.transform.SetParent(contentArea.transform, false);
+                var errorText = CreateText("Error", contentArea.transform, $"⚠ {errorMessage}", 11,
+                    new(1f, 0.4f, 0.4f, 1), TextAnchor.UpperLeft);
                 var errorTextComponent = errorText.GetComponent<Text>();
-                errorTextComponent.text = $"⚠ {errorMessage}";
-                errorTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-                errorTextComponent.fontSize = 11;
                 errorTextComponent.fontStyle = FontStyle.Bold;
-                errorTextComponent.color = new(1f, 0.4f, 0.4f, 1);
-                errorTextComponent.alignment = TextAnchor.UpperLeft;
                 errorTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
                 errorTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
                 var errorRect = errorText.GetComponent<RectTransform>();
@@ -1197,12 +1051,14 @@ namespace DuckovCustomModel.MonoBehaviours
             }
 
             var button = buttonObj.GetComponent<Button>();
-            var colors = button.colors;
-            colors.normalColor = new(1, 1, 1, 1);
-            colors.highlightedColor = hasError ? new(0.7f, 0.5f, 0.5f, 1) : new(0.5f, 0.7f, 0.9f, 1);
-            colors.pressedColor = hasError ? new(0.6f, 0.4f, 0.4f, 1) : new(0.4f, 0.6f, 0.8f, 1);
-            colors.selectedColor = hasError ? new(0.7f, 0.5f, 0.5f, 1) : new(0.5f, 0.7f, 0.9f, 1);
-            button.colors = colors;
+            if (isInUse && !hasError)
+                SetupButtonColors(button, new(1, 1, 1, 1), new(0.5f, 0.8f, 0.6f, 1), new(0.4f, 0.7f, 0.5f, 1),
+                    new(0.5f, 0.8f, 0.6f, 1));
+            else
+                SetupButtonColors(button, new(1, 1, 1, 1),
+                    hasError ? new(0.7f, 0.5f, 0.5f, 1) : new(0.5f, 0.7f, 0.9f, 1),
+                    hasError ? new(0.6f, 0.4f, 0.4f, 1) : new(0.4f, 0.6f, 0.8f, 1),
+                    hasError ? new(0.7f, 0.5f, 0.5f, 1) : new(0.5f, 0.7f, 0.9f, 1));
 
             button.interactable = !hasError;
             button.onClick.AddListener(() => OnModelSelected(bundle, model));
@@ -1233,15 +1089,10 @@ namespace DuckovCustomModel.MonoBehaviours
             outline.effectColor = new(0.4f, 0.3f, 0.3f, 0.6f);
             outline.effectDistance = new(1, -1);
 
-            var nameText = new GameObject("Name", typeof(Text));
-            nameText.transform.SetParent(buttonObj.transform, false);
+            var nameText = CreateText("Name", buttonObj.transform, ModelSelectorUILocalization.NoModel, 16,
+                Color.white, TextAnchor.MiddleCenter);
             var nameTextComponent = nameText.GetComponent<Text>();
-            nameTextComponent.text = ModelSelectorUILocalization.NoModel;
-            nameTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            nameTextComponent.fontSize = 16;
             nameTextComponent.fontStyle = FontStyle.Bold;
-            nameTextComponent.color = Color.white;
-            nameTextComponent.alignment = TextAnchor.MiddleCenter;
             nameTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
             nameTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
             var nameRect = nameText.GetComponent<RectTransform>();
@@ -1252,13 +1103,8 @@ namespace DuckovCustomModel.MonoBehaviours
             nameRect.offsetMax = new(-10, 0);
 
             var button = buttonObj.GetComponent<Button>();
-            var colors = button.colors;
-            colors.normalColor = new(1, 1, 1, 1);
-            colors.highlightedColor = new(0.7f, 0.5f, 0.5f, 1);
-            colors.pressedColor = new(0.6f, 0.4f, 0.4f, 1);
-            colors.selectedColor = new(0.7f, 0.5f, 0.5f, 1);
-            button.colors = colors;
-
+            SetupButtonColors(button, new(1, 1, 1, 1), new(0.7f, 0.5f, 0.5f, 1), new(0.6f, 0.4f, 0.4f, 1),
+                new(0.7f, 0.5f, 0.5f, 1));
             button.onClick.AddListener(OnNoneModelSelected);
         }
 
@@ -1409,6 +1255,7 @@ namespace DuckovCustomModel.MonoBehaviours
             }
 
             UpdateModelHandler();
+            RefreshModelList();
 
             _uiActive = true;
             if (_overlay != null) _overlay.SetActive(true);
@@ -1615,6 +1462,59 @@ namespace DuckovCustomModel.MonoBehaviours
             _petModelHandler = petCharacterControl.GetComponent<ModelHandler>();
             if (_petModelHandler == null)
                 _petModelHandler = ModelManager.InitializeModelHandler(petCharacterControl, true);
+        }
+
+        private static GameObject CreateImage(string name, Transform parent)
+        {
+            var obj = new GameObject(name, typeof(Image));
+            obj.transform.SetParent(parent, false);
+            return obj;
+        }
+
+        private static GameObject CreateText(string name, Transform parent, string text, int fontSize = 14,
+            Color? color = null, TextAnchor alignment = TextAnchor.MiddleLeft)
+        {
+            var obj = new GameObject(name, typeof(Text));
+            obj.transform.SetParent(parent, false);
+            var textComponent = obj.GetComponent<Text>();
+            textComponent.text = text;
+            textComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            textComponent.fontSize = fontSize;
+            textComponent.color = color ?? Color.white;
+            textComponent.alignment = alignment;
+            return obj;
+        }
+
+        private static GameObject CreateButton(string name, Transform parent, UnityAction? onClick = null)
+        {
+            var obj = new GameObject(name, typeof(Image), typeof(Button));
+            obj.transform.SetParent(parent, false);
+            var button = obj.GetComponent<Button>();
+            if (onClick != null) button.onClick.AddListener(onClick);
+            return obj;
+        }
+
+        private static void SetupRectTransform(GameObject obj, Vector2 anchorMin, Vector2 anchorMax, Vector2 sizeDelta,
+            Vector2? pivot = null, Vector2? anchoredPosition = null)
+        {
+            var rect = obj.GetComponent<RectTransform>();
+            if (rect == null) return;
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.sizeDelta = sizeDelta;
+            if (pivot.HasValue) rect.pivot = pivot.Value;
+            if (anchoredPosition.HasValue) rect.anchoredPosition = anchoredPosition.Value;
+        }
+
+        private static void SetupButtonColors(Button button, Color? normalColor = null, Color? highlightedColor = null,
+            Color? pressedColor = null, Color? selectedColor = null)
+        {
+            var colors = button.colors;
+            colors.normalColor = normalColor ?? new(1, 1, 1, 1);
+            colors.highlightedColor = highlightedColor ?? new(0.5f, 0.7f, 0.9f, 1);
+            colors.pressedColor = pressedColor ?? new(0.4f, 0.6f, 0.8f, 1);
+            colors.selectedColor = selectedColor ?? new(0.5f, 0.7f, 0.9f, 1);
+            button.colors = colors;
         }
     }
 }
