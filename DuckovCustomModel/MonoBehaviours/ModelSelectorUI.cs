@@ -433,6 +433,18 @@ namespace DuckovCustomModel.MonoBehaviours
             itemLabelRect.offsetMin = new(10, 0);
             itemLabelRect.offsetMax = new(-10, 0);
 
+            var checkmarkObj = new GameObject("Checkmark", typeof(Image));
+            checkmarkObj.transform.SetParent(itemObj.transform, false);
+            var checkmarkImage = checkmarkObj.GetComponent<Image>();
+            checkmarkImage.color = new(0.2f, 0.8f, 0.2f, 1f);
+            var checkmarkRect = checkmarkObj.GetComponent<RectTransform>();
+            checkmarkRect.anchorMin = new(0, 0.5f);
+            checkmarkRect.anchorMax = new(0, 0.5f);
+            checkmarkRect.pivot = new(0.5f, 0.5f);
+            checkmarkRect.anchoredPosition = new(5, 0);
+            checkmarkRect.sizeDelta = new(16, 16);
+            checkmarkObj.SetActive(false);
+
             var toggle = itemObj.GetComponent<Toggle>();
             var colors = toggle.colors;
             colors.normalColor = new(0.15f, 0.18f, 0.22f, 1f);
@@ -442,7 +454,7 @@ namespace DuckovCustomModel.MonoBehaviours
             colors.disabledColor = new(0.1f, 0.12f, 0.15f, 0.5f);
             toggle.colors = colors;
             toggle.targetGraphic = itemImage;
-            toggle.graphic = itemLabelText;
+            toggle.graphic = checkmarkImage;
 
             _targetTypeDropdown.itemText = itemLabelText;
         }

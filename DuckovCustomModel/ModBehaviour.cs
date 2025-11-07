@@ -154,7 +154,7 @@ namespace DuckovCustomModel
             var mainCharacterControl = LevelManager.Instance.MainCharacter;
             var petCharacterControl = LevelManager.Instance.PetCharacter;
             InitializeModelHandlerToCharacter(mainCharacterControl, "MainCharacter");
-            InitializeModelHandlerToCharacter(petCharacterControl, "PetCharacter");
+            InitializeModelHandlerToCharacter(petCharacterControl, "PetCharacter", true);
         }
 
         private void LevelManager_OnAfterLevelInitialized()
@@ -164,7 +164,7 @@ namespace DuckovCustomModel
             InitializeModelToCharacter(mainCharacterControl, "MainCharacter",
                 UsingModel?.ModelID ?? string.Empty, ModelTarget.Character);
             InitializeModelToCharacter(petCharacterControl, "PetCharacter",
-                UsingModel?.PetModelID ?? string.Empty, ModelTarget.Pet);
+                UsingModel?.PetModelID ?? string.Empty, ModelTarget.Pet, true);
         }
 
         private void InitializeModelSelectorUI()
