@@ -10,6 +10,7 @@ using DuckovCustomModel.Localizations;
 using DuckovCustomModel.Managers;
 using SodaCraft.Localizations;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -744,7 +745,8 @@ namespace DuckovCustomModel.MonoBehaviours
             };
         }
 
-        private void BuildHideEquipmentToggle(GameObject settingsPanel, string labelText, bool isOn, UnityEngine.Events.UnityAction<bool> onValueChanged)
+        private void BuildHideEquipmentToggle(GameObject settingsPanel, string labelText, bool isOn,
+            UnityAction<bool> onValueChanged)
         {
             var toggleObj = new GameObject("HideEquipmentToggle", typeof(Toggle));
             toggleObj.transform.SetParent(settingsPanel.transform, false);
@@ -1247,7 +1249,7 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
-            ModelHandler? targetHandler = null;
+            ModelHandler? targetHandler;
             if (_currentTargetType == ModelTarget.Character)
             {
                 if (_modelHandler == null)
@@ -1288,7 +1290,7 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
-            ModelHandler? targetHandler = null;
+            ModelHandler? targetHandler;
             if (_currentTargetType == ModelTarget.Character)
             {
                 if (_modelHandler == null)
@@ -1588,12 +1590,10 @@ namespace DuckovCustomModel.MonoBehaviours
             }
 
             var petCharacterControl = LevelManager.Instance.PetCharacter;
-            if (petCharacterControl != null)
-            {
-                _petModelHandler = petCharacterControl.GetComponent<ModelHandler>();
-                if (_petModelHandler == null)
-                    _petModelHandler = ModelManager.InitializeModelHandler(petCharacterControl);
-            }
+            if (petCharacterControl == null) return;
+            _petModelHandler = petCharacterControl.GetComponent<ModelHandler>();
+            if (_petModelHandler == null)
+                _petModelHandler = ModelManager.InitializeModelHandler(petCharacterControl, true);
         }
     }
 }

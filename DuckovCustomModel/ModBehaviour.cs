@@ -177,7 +177,8 @@ namespace DuckovCustomModel
             ModLogger.Log("ModelSelectorUI initialized.");
         }
 
-        private void InitializeModelHandlerToCharacter(CharacterMainControl characterMainControl, string characterName)
+        private void InitializeModelHandlerToCharacter(CharacterMainControl characterMainControl,
+            string characterName, bool isPet = false)
         {
             if (characterMainControl == null)
             {
@@ -185,13 +186,13 @@ namespace DuckovCustomModel
                 return;
             }
 
-            var modelHandler = ModelManager.InitializeModelHandler(characterMainControl);
+            var modelHandler = ModelManager.InitializeModelHandler(characterMainControl, isPet);
             if (modelHandler != null) return;
             ModLogger.LogError($"Initialize ModelHandler to {characterName} failed: ModelHandler is null");
         }
 
         private void InitializeModelToCharacter(CharacterMainControl characterMainControl, string characterName,
-            string modelID, ModelTarget modelTarget)
+            string modelID, ModelTarget modelTarget, bool isPet = false)
         {
             if (characterMainControl == null)
             {
@@ -215,7 +216,7 @@ namespace DuckovCustomModel
                 return;
             }
 
-            var modelHandler = ModelManager.InitializeModelHandler(characterMainControl);
+            var modelHandler = ModelManager.InitializeModelHandler(characterMainControl, isPet);
             if (modelHandler == null)
             {
                 ModLogger.LogError(
