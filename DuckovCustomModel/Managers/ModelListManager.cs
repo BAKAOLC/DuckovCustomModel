@@ -114,7 +114,8 @@ namespace DuckovCustomModel.Managers
                         {
                             cancellationToken.ThrowIfCancellationRequested();
                             OnRefreshProgress?.Invoke($"Loading priority model: {priorityModel.Name}");
-                            await AssetBundleManager.GetOrLoadAssetBundleAsync(priorityBundle, false, cancellationToken);
+                            await AssetBundleManager.GetOrLoadAssetBundleAsync(priorityBundle, false,
+                                cancellationToken);
                             await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
                         }
 
@@ -124,8 +125,10 @@ namespace DuckovCustomModel.Managers
                     if (priorityModels.Count > 0)
                         foreach (var (priorityBundle, priorityModel) in priorityModels)
                         {
-                            var priorityBundleInList = ModelManager.ModelBundles.FirstOrDefault(b => b == priorityBundle);
-                            var priorityModelInList = priorityBundleInList?.Models.FirstOrDefault(m => m == priorityModel);
+                            var priorityBundleInList =
+                                ModelManager.ModelBundles.FirstOrDefault(b => b == priorityBundle);
+                            var priorityModelInList =
+                                priorityBundleInList?.Models.FirstOrDefault(m => m == priorityModel);
                             if (priorityModelInList == null) continue;
                             cancellationToken.ThrowIfCancellationRequested();
                             if (priorityBundleInList != null)
@@ -173,20 +176,12 @@ namespace DuckovCustomModel.Managers
                             continue;
                         }
 
-                        if (!ModelManager.FindModelByID(currentModelID, out var bundleInfo, out var modelInfo))
+                        if (!ModelManager.FindModelByID(currentModelID, out _, out var modelInfo))
                             continue;
 
                         if (!modelInfo.CompatibleWithType(target)) continue;
 
-                        var handlers = ModelManager.GetAllModelHandlers(target);
-                        foreach (var handler in handlers)
-                        {
-                            handler.InitializeCustomModel(bundleInfo, modelInfo);
-                            handler.ChangeToCustomModel();
-                        }
-
-                        ModLogger.Log(
-                            $"Restored {target} model after bundle update: {modelInfo.Name} ({currentModelID})");
+                        ApplyModelToTarget(target, currentModelID, true);
                     }
                 }
             }
@@ -224,6 +219,91 @@ namespace DuckovCustomModel.Managers
 
             await WaitForRefreshCompletion();
             await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+        }
+
+        public static void ApplyModelToTarget(ModelTarget target, string modelID, bool forceReapply = false)
+        {
+            if (ModBehaviour.Instance?.UsingModel == null) return;
+            if (string.IsNullOrEmpty(modelID)) return;
+
+            var handlers = ModelManager.GetAllModelHandlers(target);
+            if (handlers.Count == 0) return;
+
+            if (!forceReapply)
+            {
+                var allApplied = true;
+                foreach (var handler in handlers)
+                    if (!handler.IsHiddenOriginalModel)
+                    {
+                        allApplied = false;
+                        break;
+                    }
+
+                if (allApplied) return;
+            }
+
+            if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))
+            {
+                ModLogger.LogWarning($"Model '{modelID}' not found for {target}");
+                return;
+            }
+
+            if (!modelInfo.CompatibleWithType(target))
+            {
+                ModLogger.LogWarning($"Model '{modelID}' is not compatible with {target}");
+                return;
+            }
+
+            foreach (var handler in handlers)
+            {
+                handler.InitializeCustomModel(bundleInfo, modelInfo);
+                handler.ChangeToCustomModel();
+            }
+
+            ModLogger.Log($"Applied model '{modelInfo.Name}' ({modelID}) to {handlers.Count} {target} object(s)");
+        }
+
+        public static void RestoreOriginalModelForTarget(ModelTarget target)
+        {
+            var handlers = ModelManager.GetAllModelHandlers(target);
+            foreach (var handler in handlers)
+                handler.RestoreOriginalModel();
+        }
+
+        public static void ApplyAllModelsFromConfig(bool forceReapply = false)
+        {
+            if (ModBehaviour.Instance?.UsingModel == null) return;
+
+            foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
+            {
+                var modelID = ModBehaviour.Instance.UsingModel.GetModelID(target);
+                if (string.IsNullOrEmpty(modelID)) continue;
+
+                ApplyModelToTarget(target, modelID, forceReapply);
+            }
+        }
+
+        public static void ApplyModelToTargetAfterRefresh(ModelTarget target, string modelID,
+            IReadOnlyCollection<string>? bundlesToReload = null)
+        {
+            if (ModBehaviour.Instance?.UsingModel == null) return;
+            if (string.IsNullOrEmpty(modelID)) return;
+
+            var needsReapply = false;
+            if (bundlesToReload is { Count: > 0 })
+                if (ModelManager.FindModelByID(modelID, out var bundleInfo, out _))
+                    if (bundlesToReload.Contains(bundleInfo.BundleName))
+                        needsReapply = true;
+
+            if (!needsReapply)
+            {
+                var handlers = ModelManager.GetAllModelHandlers(target);
+                var allApplied = handlers.All(handler => handler.IsHiddenOriginalModel);
+
+                if (allApplied) return;
+            }
+
+            ApplyModelToTarget(target, modelID, true);
         }
     }
 }

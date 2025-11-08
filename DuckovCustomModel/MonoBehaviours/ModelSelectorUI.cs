@@ -794,46 +794,14 @@ namespace DuckovCustomModel.MonoBehaviours
 
                 UpdateModelHandler();
 
+                var bundlesToReload = ModelListManager.CurrentRefreshingBundles;
+
                 foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
                 {
                     var modelID = _usingModel.GetModelID(target);
                     if (string.IsNullOrEmpty(modelID)) continue;
 
-                    var handlers = ModelManager.GetAllModelHandlers(target);
-                    if (handlers.Count == 0) continue;
-
-                    if (ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))
-                    {
-                        if (modelInfo.CompatibleWithType(target))
-                        {
-                            foreach (var handler in handlers)
-                            {
-                                handler.InitializeCustomModel(bundleInfo, modelInfo);
-                                handler.ChangeToCustomModel();
-                            }
-
-                            ModLogger.Log(
-                                $"Auto-reapplied {target} model after refresh: {modelInfo.Name} ({modelID}) - Applied to {handlers.Count} object(s)");
-                        }
-                        else
-                        {
-                            ModLogger.LogWarning(
-                                $"{target} model '{modelID}' is not compatible with {target}. Restoring to original model.");
-                            _usingModel.SetModelID(target, string.Empty);
-                            ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
-                            foreach (var handler in handlers)
-                                handler.RestoreOriginalModel();
-                        }
-                    }
-                    else
-                    {
-                        ModLogger.LogWarning(
-                            $"Previously used {target} model '{modelID}' not found after refresh. Restoring to original model.");
-                        _usingModel.SetModelID(target, string.Empty);
-                        ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
-                        foreach (var handler in handlers)
-                            handler.RestoreOriginalModel();
-                    }
+                    ModelListManager.ApplyModelToTargetAfterRefresh(target, modelID, bundlesToReload);
                 }
             }
             catch (OperationCanceledException)
@@ -843,19 +811,6 @@ namespace DuckovCustomModel.MonoBehaviours
             catch (Exception ex)
             {
                 ModLogger.LogError($"Failed to auto-reapply model after refresh: {ex.Message}");
-                foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
-                {
-                    var handlers = ModelManager.GetAllModelHandlers(target);
-                    foreach (var handler in handlers)
-                        try
-                        {
-                            handler.RestoreOriginalModel();
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-                }
             }
         }
 
@@ -1118,27 +1073,9 @@ namespace DuckovCustomModel.MonoBehaviours
 
                         await ModelListManager.WaitForRefreshCompletion();
                         await UniTask.Yield(PlayerLoopTiming.Update);
-
-                        if (!ModelManager.FindModelByID(model.ModelID, out var updatedBundleInfo,
-                                out var updatedModelInfo))
-                        {
-                            ModLogger.LogError($"Model '{model.ModelID}' not found after bundle update");
-                            return;
-                        }
-
-                        bundle = updatedBundleInfo;
-                        model = updatedModelInfo;
                     }
 
-                var allHandlers = ModelManager.GetAllModelHandlers(target);
-                foreach (var handler in allHandlers)
-                {
-                    handler.InitializeCustomModel(bundle, model);
-                    handler.ChangeToCustomModel();
-                }
-
-                ModLogger.Log(
-                    $"Selected model for {target}: {model.Name} ({model.ModelID}) - Applied to {allHandlers.Count} object(s)");
+                ModelListManager.ApplyModelToTarget(target, model.ModelID, true);
                 HidePanel();
             }
             catch (Exception ex)
@@ -1158,11 +1095,7 @@ namespace DuckovCustomModel.MonoBehaviours
             _usingModel.SetModelID(_currentTargetType, string.Empty);
             ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
 
-            var allHandlers = ModelManager.GetAllModelHandlers(_currentTargetType);
-            foreach (var handler in allHandlers) handler.RestoreOriginalModel();
-
-            ModLogger.Log(
-                $"Restored to original model for {_currentTargetType} - Applied to {allHandlers.Count} object(s).");
+            ModelListManager.RestoreOriginalModelForTarget(_currentTargetType);
             HidePanel();
         }
 
@@ -1335,58 +1268,7 @@ namespace DuckovCustomModel.MonoBehaviours
                     var modelID = _usingModel.GetModelID(target);
                     if (string.IsNullOrEmpty(modelID)) continue;
 
-                    var handlers = ModelManager.GetAllModelHandlers(target);
-                    if (handlers.Count == 0) continue;
-
-                    if (ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))
-                    {
-                        if (modelInfo.CompatibleWithType(target))
-                        {
-                            try
-                            {
-                                foreach (var handler in handlers)
-                                {
-                                    handler.InitializeCustomModel(bundleInfo, modelInfo);
-                                    handler.ChangeToCustomModel();
-                                }
-
-                                ModLogger.Log(
-                                    $"{target} model reapplied after window close: {modelInfo.Name} ({modelID}) - Applied to {handlers.Count} object(s)");
-                            }
-                            catch (Exception ex)
-                            {
-                                ModLogger.LogError(
-                                    $"Failed to reapply {target} model after window close: {ex.Message}");
-                                foreach (var handler in handlers)
-                                    try
-                                    {
-                                        handler.RestoreOriginalModel();
-                                    }
-                                    catch
-                                    {
-                                        // ignored
-                                    }
-                            }
-                        }
-                        else
-                        {
-                            ModLogger.LogWarning(
-                                $"{target} model '{modelID}' is not compatible with {target}. Restoring to original model.");
-                            _usingModel.SetModelID(target, string.Empty);
-                            ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
-                            foreach (var handler in handlers)
-                                handler.RestoreOriginalModel();
-                        }
-                    }
-                    else
-                    {
-                        ModLogger.LogWarning(
-                            $"{target} model '{modelID}' not found. Restoring to original model.");
-                        _usingModel.SetModelID(target, string.Empty);
-                        ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
-                        foreach (var handler in handlers)
-                            handler.RestoreOriginalModel();
-                    }
+                    ModelListManager.ApplyModelToTarget(target, modelID);
                 }
             }
             catch (Exception ex)

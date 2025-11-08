@@ -170,32 +170,7 @@ namespace DuckovCustomModel
 
         private void LevelManager_OnAfterLevelInitialized()
         {
-            foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
-            {
-                var modelID = UsingModel?.GetModelID(target) ?? string.Empty;
-                if (string.IsNullOrEmpty(modelID)) continue;
-
-                if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))
-                {
-                    ModLogger.LogError($"Unable to find model '{modelID}' for {target}");
-                    continue;
-                }
-
-                if (!modelInfo.CompatibleWithType(target))
-                {
-                    ModLogger.LogError($"Model '{modelID}' is not compatible with {target}");
-                    continue;
-                }
-
-                var handlers = ModelManager.GetAllModelHandlers(target);
-                foreach (var handler in handlers)
-                {
-                    handler.InitializeCustomModel(bundleInfo, modelInfo);
-                    handler.ChangeToCustomModel();
-                }
-
-                ModLogger.Log($"Applied model '{modelInfo.Name}' ({modelID}) to {handlers.Count} {target} object(s)");
-            }
+            ModelListManager.ApplyAllModelsFromConfig();
         }
 
         private void InitializeModelSelectorUI()
