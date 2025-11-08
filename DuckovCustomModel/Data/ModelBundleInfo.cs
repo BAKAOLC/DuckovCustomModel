@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 
 namespace DuckovCustomModel.Data
@@ -18,7 +19,9 @@ namespace DuckovCustomModel.Data
             if (!File.Exists(infoFilePath)) return null;
             var json = File.ReadAllText(infoFilePath);
             var info = JsonConvert.DeserializeObject<ModelBundleInfo>(json, Constant.JsonSettings);
-            if (info != null) info.DirectoryPath = directoryPath;
+            if (info == null) return info;
+            info.DirectoryPath = directoryPath;
+            info.Models = info.Models.Where(model => model.Validate()).ToArray();
             return info;
         }
 

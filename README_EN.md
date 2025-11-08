@@ -160,9 +160,9 @@ Model Bundle Folder/
   - Valid values: `"Character"`, `"Pet"`
   - Can contain multiple values, indicating the model is compatible with both characters and pets
   - The model selection interface will filter and display compatible models based on the currently selected target type
-- `SoundInfos` (optional): Array of sound information, supports configuring tags for sounds
+- `CustomSounds` (optional): Array of custom sound information, supports configuring tags for sounds
   - Each sound can be configured with multiple tags (`normal`, `surprise`, `death`)
-  - Defaults to `"normal"` tag when no tags are specified
+  - Defaults to `["normal"]` when no tags are specified
   - The same sound file can be used for multiple scenarios
 
 ## Locator Points
@@ -290,7 +290,7 @@ Sounds can be configured in `ModelInfo` within `bundleinfo.json`:
 {
   "ModelID": "unique_model_id",
   "Name": "Model Display Name",
-  "SoundInfos": [
+  "CustomSounds": [
     {
       "Path": "sounds/normal1.wav",
       "Tags": ["normal"]
@@ -338,7 +338,7 @@ Sounds can be configured in `ModelInfo` within `bundleinfo.json`:
 - `"normal"`: Triggered during AI normal state
 - `"surprise"`: Triggered during AI surprise state
 - `"death"`: Triggered during AI death state
-- If a sound with the specified tag doesn't exist, it will fall back to sounds tagged with `"normal"`
+- If a sound with the specified tag doesn't exist, the original game event will be used (no fallback to other tags)
 
 ### Sound File Requirements
 

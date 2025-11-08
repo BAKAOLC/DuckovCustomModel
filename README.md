@@ -160,9 +160,9 @@ UI 界面相关配置。
   - 可选值：`"Character"`（角色）、`"Pet"`（宠物）
   - 可以同时包含多个值，表示该模型同时适用于角色和宠物
   - 模型选择界面会根据当前选择的目标类型过滤显示兼容的模型
-- `SoundInfos`（可选）：音效信息数组，支持为音效配置标签
+- `CustomSounds`（可选）：自定义音效信息数组，支持为音效配置标签
   - 每个音效可以配置多个标签（`normal`、`surprise`、`death`）
-  - 未指定标签时，默认为 `"normal"` 标签
+  - 未指定标签时，默认为 `["normal"]`
   - 同一音效文件可以同时用于多个场景
 
 ## 定位锚点
@@ -290,7 +290,7 @@ Animator Controller 可以使用以下参数：
 {
   "ModelID": "unique_model_id",
   "Name": "模型显示名称",
-  "SoundInfos": [
+  "CustomSounds": [
     {
       "Path": "sounds/normal1.wav",
       "Tags": ["normal"]
@@ -338,7 +338,7 @@ Animator Controller 可以使用以下参数：
 - `"normal"`：AI 普通状态时触发
 - `"surprise"`：AI 惊讶状态时触发
 - `"death"`：AI 死亡状态时触发
-- 如果指定标签的音效不存在，会回退到 `"normal"` 标签的音效
+- 如果指定标签的音效不存在，将使用原版事件（不会回退到其他标签）
 
 ### 音效文件要求
 
