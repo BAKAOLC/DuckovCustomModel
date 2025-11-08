@@ -107,46 +107,49 @@ namespace DuckovCustomModel.Managers
                         $"Temporarily cleaned up {target} custom model for bundle update: {bundleName}");
                 }
 
-                if (priorityModels.Count > 0)
-                    foreach (var (priorityBundle, priorityModel) in priorityModels)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        OnRefreshProgress?.Invoke($"Loading priority model: {priorityModel.Name}");
-                        await AssetBundleManager.GetOrLoadAssetBundleAsync(priorityBundle, false, cancellationToken);
-                        await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-                    }
-
-                var totalCount = ModelManager.ModelBundles.Sum(b => b.Models.Length);
-                var count = 0;
-
-                if (priorityModels.Count > 0)
-                    foreach (var (priorityBundle, priorityModel) in priorityModels)
-                    {
-                        var priorityBundleInList = ModelManager.ModelBundles.FirstOrDefault(b => b == priorityBundle);
-                        var priorityModelInList = priorityBundleInList?.Models.FirstOrDefault(m => m == priorityModel);
-                        if (priorityModelInList == null) continue;
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (priorityBundleInList != null)
-                            await AssetBundleManager.CheckBundleStatusAsync(priorityBundleInList,
-                                priorityModelInList,
-                                cancellationToken);
-                        count++;
-                        await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-                    }
-
-                foreach (var bundle in ModelManager.ModelBundles)
-                foreach (var model in bundle.Models)
+                if (bundlesToReload.Count > 0)
                 {
-                    if (priorityModels.Any(pm => pm.bundle == bundle && pm.model == model))
-                        continue;
+                    if (priorityModels.Count > 0)
+                        foreach (var (priorityBundle, priorityModel) in priorityModels)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            OnRefreshProgress?.Invoke($"Loading priority model: {priorityModel.Name}");
+                            await AssetBundleManager.GetOrLoadAssetBundleAsync(priorityBundle, false, cancellationToken);
+                            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                        }
 
-                    cancellationToken.ThrowIfCancellationRequested();
-                    await AssetBundleManager.CheckBundleStatusAsync(bundle, model, cancellationToken);
-                    count++;
+                    var totalCount = ModelManager.ModelBundles.Sum(b => b.Models.Length);
+                    var count = 0;
 
-                    if (count % 10 != 0) continue;
-                    OnRefreshProgress?.Invoke($"Loading... ({count}/{totalCount})");
-                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                    if (priorityModels.Count > 0)
+                        foreach (var (priorityBundle, priorityModel) in priorityModels)
+                        {
+                            var priorityBundleInList = ModelManager.ModelBundles.FirstOrDefault(b => b == priorityBundle);
+                            var priorityModelInList = priorityBundleInList?.Models.FirstOrDefault(m => m == priorityModel);
+                            if (priorityModelInList == null) continue;
+                            cancellationToken.ThrowIfCancellationRequested();
+                            if (priorityBundleInList != null)
+                                await AssetBundleManager.CheckBundleStatusAsync(priorityBundleInList,
+                                    priorityModelInList,
+                                    cancellationToken);
+                            count++;
+                            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                        }
+
+                    foreach (var bundle in ModelManager.ModelBundles)
+                    foreach (var model in bundle.Models)
+                    {
+                        if (priorityModels.Any(pm => pm.bundle == bundle && pm.model == model))
+                            continue;
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await AssetBundleManager.CheckBundleStatusAsync(bundle, model, cancellationToken);
+                        count++;
+
+                        if (count % 10 != 0) continue;
+                        OnRefreshProgress?.Invoke($"Loading... ({count}/{totalCount})");
+                        await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                    }
                 }
 
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
