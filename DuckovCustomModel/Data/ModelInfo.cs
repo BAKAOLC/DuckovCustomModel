@@ -13,7 +13,6 @@ namespace DuckovCustomModel.Data
         public string Version { get; set; } = string.Empty;
         public string ThumbnailPath { get; set; } = string.Empty;
         public string PrefabPath { get; set; } = string.Empty;
-        public string[] SoundPaths { get; set; } = [];
         public SoundInfo[] SoundInfos { get; set; } = [];
 
         [JsonIgnore] public string BundleName { get; internal set; } = string.Empty;
@@ -31,13 +30,6 @@ namespace DuckovCustomModel.Data
             {
                 if (!Enum.IsDefined(typeof(ModelTarget), target)) continue;
                 if (!targets.Contains(target)) targets.Add(target);
-            }
-
-            var soundPaths = new List<string>();
-            foreach (var soundPath in SoundPaths ?? [])
-            {
-                if (string.IsNullOrWhiteSpace(soundPath)) continue;
-                if (!soundPaths.Contains(soundPath)) soundPaths.Add(soundPath);
             }
 
             var soundInfos = new List<SoundInfo>();

@@ -160,6 +160,10 @@ Model Bundle Folder/
   - Valid values: `"Character"`, `"Pet"`
   - Can contain multiple values, indicating the model is compatible with both characters and pets
   - The model selection interface will filter and display compatible models based on the currently selected target type
+- `SoundInfos` (optional): Array of sound information, supports configuring tags for sounds
+  - Each sound can be configured with multiple tags (`normal`, `surprise`, `death`)
+  - Defaults to `"normal"` tag when no tags are specified
+  - The same sound file can be used for multiple scenarios
 
 ## Locator Points
 
@@ -273,4 +277,77 @@ If the model contains melee attack animations, you can add an animation layer na
 2. Movement, jumping, dashing, and other states are synchronized in real-time to the custom model's Animator
 3. Actions like attacking and reloading trigger corresponding animation parameters
 4. If the `MeleeAttack` layer exists, its weight will be automatically adjusted during attacks to play attack animations
+
+## Custom Sounds
+
+The mod supports configuring sounds for custom models, including both player key press triggers and AI automatic triggers.
+
+### Sound Configuration
+
+Sounds can be configured in `ModelInfo` within `bundleinfo.json`:
+
+```json
+{
+  "ModelID": "unique_model_id",
+  "Name": "Model Display Name",
+  "SoundInfos": [
+    {
+      "Path": "sounds/normal1.wav",
+      "Tags": ["normal"]
+    },
+    {
+      "Path": "sounds/normal2.wav",
+      "Tags": ["normal"]
+    },
+    {
+      "Path": "sounds/surprise.wav",
+      "Tags": ["surprise", "normal"]
+    },
+    {
+      "Path": "sounds/death.wav",
+      "Tags": ["death"]
+    }
+  ]
+}
+```
+
+#### SoundInfo Field Descriptions
+
+- `Path` (required): Sound file path, relative to the model bundle folder
+- `Tags` (optional): Array of sound tags, used to specify sound usage scenarios
+  - `"normal"`: Normal sound, used for player key press triggers and AI normal state
+  - `"surprise"`: Surprise sound, used for AI surprise state
+  - `"death"`: Death sound, used for AI death state
+  - Can contain multiple tags, indicating the sound can be used in multiple scenarios
+  - Defaults to `["normal"]` when no tags are specified
+
+
+### Sound Trigger Methods
+
+#### Player Key Press Trigger
+
+- When a character model has sounds configured, pressing the `Quack` key in-game will trigger a sound
+- Only sounds tagged with `"normal"` will be played
+- Randomly selects one sound from all sounds tagged with `"normal"`
+- Only player characters respond to key presses, pets do not trigger
+- When playing a sound, it also creates an AI sound, allowing other AIs to hear the player's sound
+
+#### AI Automatic Trigger
+
+- AI will automatically trigger sounds with corresponding tags based on game state
+- `"normal"`: Triggered during AI normal state
+- `"surprise"`: Triggered during AI surprise state
+- `"death"`: Triggered during AI death state
+- If a sound with the specified tag doesn't exist, it will fall back to sounds tagged with `"normal"`
+
+### Sound File Requirements
+
+- Sound files should be placed inside the model bundle folder
+- Supports audio formats used by the game (typically WAV, OGG, etc.)
+- Sound file paths are specified in `SoundInfo.Path`, relative to the model bundle folder
+- Example: If the model bundle folder is `MyModel/` and the sound file is `MyModel/sounds/voice.wav`, then `Path` should be set to `"sounds/voice.wav"`
+
+### Notes
+
+- If a model has no sounds configured, it will not affect other functionality
 

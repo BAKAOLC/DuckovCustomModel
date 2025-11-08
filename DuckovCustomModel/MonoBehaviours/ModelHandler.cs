@@ -414,32 +414,18 @@ namespace DuckovCustomModel.MonoBehaviours
 
             var bundleDirectory = modelBundleInfo.DirectoryPath;
 
-            if (modelInfo.SoundInfos is { Length: > 0 })
-                foreach (var soundInfo in modelInfo.SoundInfos)
-                {
-                    if (string.IsNullOrWhiteSpace(soundInfo.Path)) continue;
-                    var fullPath = Path.Combine(bundleDirectory, soundInfo.Path);
-                    if (!File.Exists(fullPath)) continue;
-
-                    foreach (var soundTag in soundInfo.TagSet)
-                    {
-                        if (!_soundsByTag.ContainsKey(soundTag))
-                            _soundsByTag[soundTag] = [];
-                        _soundsByTag[soundTag].Add(fullPath);
-                    }
-                }
-
-            if (modelInfo.SoundPaths is not { Length: > 0 }) return;
+            if (modelInfo.SoundInfos is not { Length: > 0 }) return;
+            foreach (var soundInfo in modelInfo.SoundInfos)
             {
-                foreach (var soundPath in modelInfo.SoundPaths)
+                if (string.IsNullOrWhiteSpace(soundInfo.Path)) continue;
+                var fullPath = Path.Combine(bundleDirectory, soundInfo.Path);
+                if (!File.Exists(fullPath)) continue;
+
+                foreach (var soundTag in soundInfo.TagSet)
                 {
-                    if (string.IsNullOrWhiteSpace(soundPath)) continue;
-                    var fullPath = Path.Combine(bundleDirectory, soundPath);
-                    if (!File.Exists(fullPath)) continue;
-                    _soundPaths.Add(fullPath);
-                    if (!_soundsByTag.ContainsKey("normal"))
-                        _soundsByTag["normal"] = [];
-                    _soundsByTag["normal"].Add(fullPath);
+                    if (!_soundsByTag.ContainsKey(soundTag))
+                        _soundsByTag[soundTag] = [];
+                    _soundsByTag[soundTag].Add(fullPath);
                 }
             }
         }
