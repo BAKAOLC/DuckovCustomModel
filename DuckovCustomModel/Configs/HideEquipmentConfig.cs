@@ -11,18 +11,25 @@ namespace DuckovCustomModel.Configs
     public class HideEquipmentConfig : ConfigBase
     {
         public Dictionary<ModelTarget, bool> HideEquipment { get; set; } = [];
+        public Dictionary<string, bool> HideAICharacterEquipment { get; set; } = [];
 
         public override void LoadDefault()
         {
             HideEquipment = [];
-            foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget))) HideEquipment[target] = false;
+            foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
+            {
+                if (target == ModelTarget.AICharacter) continue;
+                HideEquipment[target] = false;
+            }
         }
 
         public override bool Validate()
         {
             foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
-                if (!HideEquipment.ContainsKey(target))
-                    HideEquipment[target] = false;
+            {
+                if (target == ModelTarget.AICharacter) continue;
+                HideEquipment.TryAdd(target, false);
+            }
 
             return true;
         }
@@ -31,6 +38,7 @@ namespace DuckovCustomModel.Configs
         {
             if (other is not HideEquipmentConfig otherConfig) return;
             HideEquipment = new(otherConfig.HideEquipment);
+            HideAICharacterEquipment = new(otherConfig.HideAICharacterEquipment);
         }
 
         public override void LoadFromFile(string filePath, bool autoSaveOnLoad = true)
@@ -117,6 +125,16 @@ namespace DuckovCustomModel.Configs
         public void SetHideEquipment(ModelTarget target, bool value)
         {
             HideEquipment[target] = value;
+        }
+
+        public bool GetHideAICharacterEquipment(string nameKey)
+        {
+            return HideAICharacterEquipment.TryGetValue(nameKey, out var value) && value;
+        }
+
+        public void SetHideAICharacterEquipment(string nameKey, bool value)
+        {
+            HideAICharacterEquipment[nameKey] = value;
         }
     }
 }

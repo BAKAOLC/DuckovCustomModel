@@ -840,6 +840,9 @@ namespace DuckovCustomModel.MonoBehaviours
             _hideEquipmentConfig.SetHideEquipment(ModelTarget.Character, value);
             ConfigManager.SaveConfigToFile(_hideEquipmentConfig, "HideEquipmentConfig.json");
             ModLogger.Log($"HideEquipment setting for {ModelTarget.Character} changed to: {value}");
+
+            if (_currentTargetType == ModelTarget.Character)
+                RefreshModelList();
         }
 
         private void OnHidePetEquipmentToggleChanged(bool value)
@@ -849,6 +852,77 @@ namespace DuckovCustomModel.MonoBehaviours
             _hideEquipmentConfig.SetHideEquipment(ModelTarget.Pet, value);
             ConfigManager.SaveConfigToFile(_hideEquipmentConfig, "HideEquipmentConfig.json");
             ModLogger.Log($"HideEquipment setting for {ModelTarget.Pet} changed to: {value}");
+
+            if (_currentTargetType == ModelTarget.Pet)
+                RefreshModelList();
+        }
+
+        private void BuildAICharacterHideEquipmentToggle(string nameKey)
+        {
+            if (_modelListContent == null) return;
+
+            var togglePanel = new GameObject("AICharacterHideEquipmentTogglePanel", typeof(RectTransform),
+                typeof(HorizontalLayoutGroup));
+            togglePanel.transform.SetParent(_modelListContent.transform, false);
+            togglePanel.transform.SetAsFirstSibling();
+
+            var togglePanelRect = togglePanel.GetComponent<RectTransform>();
+            togglePanelRect.sizeDelta = new(1140, 50);
+
+            var layoutGroup = togglePanel.GetComponent<HorizontalLayoutGroup>();
+            layoutGroup.padding = new(10, 10, 10, 10);
+            layoutGroup.spacing = 10;
+            layoutGroup.childAlignment = TextAnchor.MiddleLeft;
+            layoutGroup.childControlWidth = false;
+            layoutGroup.childControlHeight = false;
+            layoutGroup.childForceExpandWidth = false;
+            layoutGroup.childForceExpandHeight = false;
+
+            var toggleObj = new GameObject("HideEquipmentToggle", typeof(Toggle));
+            toggleObj.transform.SetParent(togglePanel.transform, false);
+            var toggle = toggleObj.GetComponent<Toggle>();
+            toggle.isOn = _hideEquipmentConfig?.GetHideAICharacterEquipment(nameKey) ?? false;
+            toggle.onValueChanged.AddListener(value => OnHideAICharacterEquipmentToggleChanged(nameKey, value));
+
+            var toggleImage = toggleObj.AddComponent<Image>();
+            toggleImage.color = new(0.2f, 0.2f, 0.2f, 1);
+            var toggleRect = toggleObj.GetComponent<RectTransform>();
+            toggleRect.sizeDelta = new(20, 20);
+
+            var checkmark = CreateImage("Checkmark", toggleObj.transform);
+            var checkmarkImage = checkmark.GetComponent<Image>();
+            checkmarkImage.color = new(0.2f, 0.8f, 0.2f, 1);
+            var checkmarkRect = checkmark.GetComponent<RectTransform>();
+            checkmarkRect.anchorMin = new(0.2f, 0.2f);
+            checkmarkRect.anchorMax = new(0.8f, 0.8f);
+            checkmarkRect.sizeDelta = Vector2.zero;
+            toggle.graphic = checkmarkImage;
+
+            var displayName = nameKey == AICharacters.AllAICharactersKey
+                ? "* (所有AI角色)"
+                : LocalizationManager.GetPlainText(nameKey);
+            var labelText = $"隐藏 {displayName} 的装备";
+            var labelObj = CreateText("Label", togglePanel.transform, labelText, 14, Color.white);
+            var labelRect = labelObj.GetComponent<RectTransform>();
+            labelRect.sizeDelta = new(300, 20);
+
+            var layoutElement = togglePanel.AddComponent<LayoutElement>();
+            layoutElement.minHeight = 50;
+            layoutElement.preferredHeight = 50;
+            layoutElement.preferredWidth = 1140;
+            layoutElement.flexibleWidth = 0;
+        }
+
+        private void OnHideAICharacterEquipmentToggleChanged(string nameKey, bool value)
+        {
+            if (_hideEquipmentConfig == null) return;
+
+            _hideEquipmentConfig.SetHideAICharacterEquipment(nameKey, value);
+            ConfigManager.SaveConfigToFile(_hideEquipmentConfig, "HideEquipmentConfig.json");
+            ModLogger.Log($"HideEquipment setting for AICharacter '{nameKey}' changed to: {value}");
+
+            if (_currentTargetType == ModelTarget.AICharacter && _currentAICharacterNameKey == nameKey)
+                RefreshModelList();
         }
 
         private void BuildAnimatorParamsToggle(GameObject settingsPanel)
@@ -1343,7 +1417,6 @@ namespace DuckovCustomModel.MonoBehaviours
                     }
 
                 ModelListManager.ApplyModelToTarget(target, model.ModelID, true);
-                HidePanel();
             }
             catch (Exception ex)
             {
@@ -1381,8 +1454,6 @@ namespace DuckovCustomModel.MonoBehaviours
 
                 ModelListManager.RestoreOriginalModelForTarget(_currentTargetType);
             }
-
-            HidePanel();
         }
 
         private void OnSearchChanged(string text)
@@ -1799,6 +1870,8 @@ namespace DuckovCustomModel.MonoBehaviours
                 RefreshModelList();
             });
 
+            BuildAICharacterHideEquipmentToggle(nameKey);
+
             BuildNoneModelButton();
 
             var searchLower = _searchText.ToLowerInvariant();
@@ -1852,7 +1925,6 @@ namespace DuckovCustomModel.MonoBehaviours
                     }
 
                 ModelListManager.ApplyModelToAICharacter(nameKey, model.ModelID, true);
-                HidePanel();
             }
             catch (Exception ex)
             {

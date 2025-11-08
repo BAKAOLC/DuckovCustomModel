@@ -146,12 +146,12 @@ namespace DuckovCustomModel.MonoBehaviours
 
         public float GetParameterFloat(int hash)
         {
-            return _floatParams.TryGetValue(hash, out var value) ? value : 0f;
+            return _floatParams.GetValueOrDefault(hash, 0f);
         }
 
         public int GetParameterInteger(int hash)
         {
-            return _intParams.TryGetValue(hash, out var value) ? value : 0;
+            return _intParams.GetValueOrDefault(hash, 0);
         }
 
         public bool GetParameterBool(int hash)
@@ -297,8 +297,20 @@ namespace DuckovCustomModel.MonoBehaviours
 
             var hideOriginalEquipment = false;
             if (ModBehaviour.Instance?.HideEquipmentConfig != null && _modelHandler != null)
-                hideOriginalEquipment =
-                    ModBehaviour.Instance.HideEquipmentConfig.GetHideEquipment(_modelHandler.Target);
+            {
+                if (_modelHandler.Target == ModelTarget.AICharacter)
+                {
+                    var nameKey = _characterMainControl?.characterPreset?.nameKey;
+                    if (!string.IsNullOrEmpty(nameKey))
+                        hideOriginalEquipment = ModBehaviour.Instance.HideEquipmentConfig
+                            .GetHideAICharacterEquipment(nameKey);
+                }
+                else
+                {
+                    hideOriginalEquipment =
+                        ModBehaviour.Instance.HideEquipmentConfig.GetHideEquipment(_modelHandler.Target);
+                }
+            }
 
             SetAnimatorBool(CustomAnimatorHash.HideOriginalEquipment, hideOriginalEquipment);
 

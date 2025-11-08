@@ -35,7 +35,12 @@ namespace DuckovCustomModel.MonoBehaviours
                 if (ModBehaviour.Instance.HideEquipmentConfig == null) return false;
                 if (!IsHiddenOriginalModel || CustomModelInstance == null) return false;
 
-                return ModBehaviour.Instance.HideEquipmentConfig.GetHideEquipment(Target);
+                if (Target != ModelTarget.AICharacter)
+                    return ModBehaviour.Instance.HideEquipmentConfig.GetHideEquipment(Target);
+                var nameKey = CharacterMainControl?.characterPreset?.nameKey;
+                return !string.IsNullOrEmpty(nameKey)
+                    ? ModBehaviour.Instance.HideEquipmentConfig.GetHideAICharacterEquipment(nameKey)
+                    : ModBehaviour.Instance.HideEquipmentConfig.GetHideEquipment(Target);
             }
         }
 
@@ -77,7 +82,6 @@ namespace DuckovCustomModel.MonoBehaviours
                             child.gameObject.SetActive(true);
                 }
         }
-
 
         public void Initialize(CharacterMainControl characterMainControl, ModelTarget target = ModelTarget.Character)
         {
