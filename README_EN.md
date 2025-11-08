@@ -209,8 +209,12 @@ The Animator Controller can use the following parameters:
 - `Running`: Whether the character is running
 - `Dashing`: Whether the character is dashing
 - `GunReady`: Whether the gun is ready
+- `Loaded`: Whether the gun is loaded (updated by `OnLoadedEvent` when holding `ItemAgent_Gun`)
 - `Reloading`: Whether reloading
 - `RightHandOut`: Whether the right hand is extended
+- `Hidden`: Whether the character is in hidden state
+- `ThermalOn`: Whether thermal imaging is enabled
+- `InAds`: Whether aiming down sights (ADS)
 - `HideOriginalEquipment`: Whether to hide original equipment (controlled by the corresponding `ModelTarget` configuration in `HideEquipmentConfig.json`)
 - `LeftHandEquip`: Whether there is equipment in the left hand slot (determined by equipment TypeID, `true` when TypeID > 0)
 - `RightHandEquip`: Whether there is equipment in the right hand slot (determined by equipment TypeID, `true` when TypeID > 0)
@@ -227,6 +231,14 @@ The Animator Controller can use the following parameters:
 - `MoveSpeed`: Movement speed ratio (normal walk 0~1, running can reach 2)
 - `MoveDirX`: Movement direction X component (-1.0 ~ 1.0, character local coordinate system)
 - `MoveDirY`: Movement direction Y component (-1.0 ~ 1.0, character local coordinate system)
+- `VelocityX`: Velocity X component
+- `VelocityY`: Velocity Y component
+- `VelocityZ`: Velocity Z component
+- `AimDirX`: Aim direction X component
+- `AimDirY`: Aim direction Y component
+- `AimDirZ`: Aim direction Z component
+- `AdsValue`: Aim down sights value (0.0 - 1.0, aiming progress)
+- `AmmoRate`: Ammo ratio (0.0 - 1.0, current ammo / max ammo capacity)
 - `HealthRate`: Health ratio (0.0 - 1.0, current health / max health)
 - `WaterRate`: Water ratio (0.0 - 1.0, current water / max water)
 - `WeightRate`: Weight ratio (current total weight / max carrying capacity, may exceed 1.0)
@@ -243,6 +255,14 @@ The Animator Controller can use the following parameters:
   - `3`: Melee weapon
   - `4`: Bow
   - `-1`: Carrying state
+- `ShootMode`: Shoot mode (determined by gun's `triggerMode` when holding `ItemAgent_Gun`)
+  - `0`: Auto
+  - `1`: Semi-automatic
+  - `2`: Bolt-action
+- `AimType`: Aim type (determined by `CharacterMainControl.AimType`)
+  - `0`: Normal aim
+  - `1`: Character skill
+  - `2`: Handheld skill
 - `WeightState`: Weight state (only effective in Raid maps)
   - `0`: Light (WeightRate ≤ 0.25)
   - `1`: Normal (0.25 < WeightRate ≤ 0.75)
@@ -260,6 +280,7 @@ The Animator Controller can use the following parameters:
 #### Trigger Type Parameters
 
 - `Attack`: Attack trigger (used to trigger melee attack animations)
+- `Shoot`: Shoot trigger (triggered by `OnShootEvent` when holding `ItemAgent_Gun`)
 
 ### Optional Animation Layer
 
@@ -275,6 +296,10 @@ If the model contains melee attack animations, you can add an animation layer na
 2. Movement, jumping, dashing, and other states are synchronized in real-time to the custom model's Animator
 3. Actions like attacking and reloading trigger corresponding animation parameters
 4. If the `MeleeAttack` layer exists, its weight will be automatically adjusted during attacks to play attack animations
+5. When the character holds `ItemAgent_Gun`, the mod automatically subscribes to the gun's `OnShootEvent` and `OnLoadedEvent` events
+   - `OnShootEvent`: Sets the `Shoot` trigger when triggered
+   - `OnLoadedEvent`: Updates the `Loaded` boolean value when triggered
+6. When the character switches held items (`OnHoldAgentChanged` event), related subscriptions are automatically updated
 
 ## Custom Sounds
 

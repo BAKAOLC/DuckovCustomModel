@@ -209,8 +209,12 @@ Animator Controller 可以使用以下参数：
 - `Running`：角色是否正在奔跑
 - `Dashing`：角色是否正在冲刺
 - `GunReady`：枪械是否准备就绪
+- `Loaded`：枪械是否已装弹（当持有 `ItemAgent_Gun` 时，由 `OnLoadedEvent` 事件更新）
 - `Reloading`：是否正在装弹
 - `RightHandOut`：右手是否伸出
+- `Hidden`：角色是否处于隐藏状态
+- `ThermalOn`：热成像是否开启
+- `InAds`：是否正在瞄准（ADS - Aim Down Sights）
 - `HideOriginalEquipment`：是否隐藏原有装备（由 `HideEquipmentConfig.json` 中对应 `ModelTarget` 的配置控制）
 - `LeftHandEquip`：左手槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
 - `RightHandEquip`：右手槽位是否有装备（基于装备的 TypeID 判断，TypeID > 0 时为 `true`）
@@ -227,6 +231,14 @@ Animator Controller 可以使用以下参数：
 - `MoveSpeed`：移动速度比例（正常走 0~1，跑步可达 2）
 - `MoveDirX`：移动方向 X 分量（-1.0 ~ 1.0，角色本地坐标系）
 - `MoveDirY`：移动方向 Y 分量（-1.0 ~ 1.0，角色本地坐标系）
+- `VelocityX`：速度 X 分量
+- `VelocityY`：速度 Y 分量
+- `VelocityZ`：速度 Z 分量
+- `AimDirX`：瞄准方向 X 分量
+- `AimDirY`：瞄准方向 Y 分量
+- `AimDirZ`：瞄准方向 Z 分量
+- `AdsValue`：瞄准值（0.0 - 1.0，瞄准进度）
+- `AmmoRate`：弹药比率（0.0 - 1.0，当前弹药数 / 最大弹药容量）
 - `HealthRate`：生命值比率（0.0 - 1.0，当前生命值 / 最大生命值）
 - `WaterRate`：水分比率（0.0 - 1.0，当前水分 / 最大水分）
 - `WeightRate`：重量比率（当前总重量 / 最大负重，可能大于 1.0）
@@ -243,6 +255,14 @@ Animator Controller 可以使用以下参数：
   - `3`：近战武器（meleeWeapon）
   - `4`：弓（bow）
   - `-1`：搬运状态
+- `ShootMode`：射击模式（当持有 `ItemAgent_Gun` 时，由枪械的 `triggerMode` 决定）
+  - `0`：自动（auto）
+  - `1`：半自动（semi）
+  - `2`：栓动（bolt）
+- `AimType`：瞄准类型（由 `CharacterMainControl.AimType` 决定）
+  - `0`：正常瞄准（normalAim）
+  - `1`：角色技能（characterSkill）
+  - `2`：手持技能（handheldSkill）
 - `WeightState`：重量状态（仅在Raid地图中生效）
   - `0`：轻量（WeightRate ≤ 0.25）
   - `1`：正常（0.25 < WeightRate ≤ 0.75）
@@ -260,6 +280,7 @@ Animator Controller 可以使用以下参数：
 #### Trigger 类型参数
 
 - `Attack`：攻击触发（用于触发近战攻击动画）
+- `Shoot`：射击触发（当持有 `ItemAgent_Gun` 时，由 `OnShootEvent` 事件触发）
 
 ### 可选动画层
 
@@ -275,6 +296,10 @@ Animator Controller 可以使用以下参数：
 2. 移动、跳跃、冲刺等状态会实时同步到自定义模型的 Animator
 3. 攻击、装弹等动作会触发相应的动画参数
 4. 如果存在 `MeleeAttack` 层，攻击时会自动调整该层的权重以播放攻击动画
+5. 当角色持有 `ItemAgent_Gun` 时，会自动订阅枪械的 `OnShootEvent` 和 `OnLoadedEvent` 事件
+   - `OnShootEvent`：触发时设置 `Shoot` 触发器
+   - `OnLoadedEvent`：触发时更新 `Loaded` 布尔值
+6. 当角色切换持有物品时（`OnHoldAgentChanged` 事件），会自动更新相关订阅
 
 ## 自定义音效
 
