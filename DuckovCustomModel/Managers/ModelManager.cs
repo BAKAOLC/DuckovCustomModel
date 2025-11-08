@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using DuckovCustomModel.Data;
 using DuckovCustomModel.MonoBehaviours;
-using Newtonsoft.Json;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -17,15 +16,10 @@ namespace DuckovCustomModel.Managers
 
         private static readonly Dictionary<string, BundleHashInfo> BundleHashCache = [];
 
-        private static string HashCacheFilePath =>
-            Path.Combine(ConfigManager.ConfigBaseDirectory, "bundle_hash_cache.json");
-
         public static string ModelsDirectory => Path.Combine(ConfigManager.ConfigBaseDirectory, "Models");
 
         public static HashSet<string> UpdateModelBundles()
         {
-            LoadHashCache();
-
             if (!Directory.Exists(ModelsDirectory))
                 Directory.CreateDirectory(ModelsDirectory);
 
@@ -48,7 +42,10 @@ namespace DuckovCustomModel.Managers
                 var configHash = BundleHashInfo.CalculateStringHash(configContent);
                 var bundleHash = BundleHashInfo.CalculateFileHash(bundlePath);
 
-                var bundleKey = bundleInfo.BundleName;
+                var bundleKey = Path.GetFileName(modelBundleDir);
+                if (string.IsNullOrEmpty(bundleKey))
+                    bundleKey = modelBundleDir;
+
                 var needsReload = false;
 
                 if (BundleHashCache.TryGetValue(bundleKey, out var cachedHash))
@@ -56,24 +53,24 @@ namespace DuckovCustomModel.Managers
                     if (cachedHash.ConfigHash != configHash || cachedHash.BundleHash != bundleHash)
                     {
                         needsReload = true;
-                        ModLogger.Log($"Bundle '{bundleKey}' changed, will reload");
+                        ModLogger.Log($"Bundle '{bundleInfo.BundleName}' changed, will reload");
                     }
                 }
                 else
                 {
                     needsReload = true;
-                    ModLogger.Log($"New bundle '{bundleKey}' detected, will load");
+                    ModLogger.Log($"New bundle '{bundleInfo.BundleName}' detected, will load");
                 }
 
                 if (needsReload)
                 {
-                    bundlesToReload.Add(bundleKey);
-                    bundlesToUnload.Add(bundleKey);
+                    bundlesToReload.Add(bundleInfo.BundleName);
+                    bundlesToUnload.Add(bundleInfo.BundleName);
                 }
 
                 var hashInfo = new BundleHashInfo
                 {
-                    BundleName = bundleKey,
+                    BundleName = bundleInfo.BundleName,
                     BundlePath = bundleInfo.BundlePath,
                     BundleHash = bundleHash,
                     ConfigHash = configHash,
@@ -85,39 +82,38 @@ namespace DuckovCustomModel.Managers
             var existingBundles = ModelBundles.ToList();
             foreach (var existingBundle in existingBundles)
             {
-                var bundleKey = existingBundle.BundleName;
-                var bundleDir = Path.Combine(ModelsDirectory, bundleKey);
-                if (!Directory.Exists(bundleDir))
-                {
-                    bundlesToUnload.Add(bundleKey);
-                    ModelBundles.Remove(existingBundle);
-                    BundleHashCache.Remove(bundleKey);
-                    ModLogger.Log($"Bundle '{bundleKey}' removed");
-                }
+                var bundleDir = existingBundle.DirectoryPath;
+                if (!string.IsNullOrEmpty(bundleDir) && Directory.Exists(bundleDir)) continue;
+                var bundleKey = Path.GetFileName(bundleDir);
+                if (string.IsNullOrEmpty(bundleKey))
+                    bundleKey = bundleDir;
+
+                bundlesToUnload.Add(existingBundle.BundleName);
+                ModelBundles.Remove(existingBundle);
+                BundleHashCache.Remove(bundleKey);
+                ModLogger.Log($"Bundle '{existingBundle.BundleName}' removed");
             }
 
             foreach (var bundleKey in bundlesToUnload)
             {
                 var bundleToUnload = ModelBundles.FirstOrDefault(b => b.BundleName == bundleKey);
-                if (bundleToUnload != null)
+                if (bundleToUnload == null) continue;
+                foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
                 {
-                    foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
+                    var handlers = GetAllModelHandlers(target);
+                    foreach (var handler in handlers)
                     {
-                        var handlers = GetAllModelHandlers(target);
-                        foreach (var handler in handlers)
-                        {
-                            if (!handler.IsHiddenOriginalModel) continue;
-                            var modelID = ModBehaviour.Instance?.UsingModel?.GetModelID(target) ?? string.Empty;
-                            if (string.IsNullOrEmpty(modelID)) continue;
-                            if (!FindModelByID(modelID, out var currentBundleInfo, out _)) continue;
-                            if (currentBundleInfo.BundleName == bundleKey)
-                                handler.CleanupCustomModel();
-                        }
+                        if (!handler.IsHiddenOriginalModel) continue;
+                        var modelID = ModBehaviour.Instance?.UsingModel?.GetModelID(target) ?? string.Empty;
+                        if (string.IsNullOrEmpty(modelID)) continue;
+                        if (!FindModelByID(modelID, out var currentBundleInfo, out _)) continue;
+                        if (currentBundleInfo.BundleName == bundleKey)
+                            handler.CleanupCustomModel();
                     }
-
-                    var bundlePath = Path.Combine(bundleToUnload.DirectoryPath, bundleToUnload.BundlePath);
-                    AssetBundleManager.UnloadAssetBundle(bundlePath);
                 }
+
+                var bundlePath = Path.Combine(bundleToUnload.DirectoryPath, bundleToUnload.BundlePath);
+                AssetBundleManager.UnloadAssetBundle(bundlePath);
             }
 
             foreach (var modelBundleDir in modelBundleDirectories)
@@ -155,7 +151,6 @@ namespace DuckovCustomModel.Managers
                 }
             }
 
-            SaveHashCache();
             CheckDuplicateModelIDs();
 
             return bundlesToReload;
@@ -225,38 +220,6 @@ namespace DuckovCustomModel.Managers
             return handlers;
         }
 
-        private static void LoadHashCache()
-        {
-            BundleHashCache.Clear();
-            if (!File.Exists(HashCacheFilePath)) return;
-
-            try
-            {
-                var json = File.ReadAllText(HashCacheFilePath);
-                var cache = JsonConvert.DeserializeObject<Dictionary<string, BundleHashInfo>>(json,
-                    Constant.JsonSettings);
-                if (cache != null)
-                    foreach (var kvp in cache)
-                        BundleHashCache[kvp.Key] = kvp.Value;
-            }
-            catch (Exception ex)
-            {
-                ModLogger.LogError($"Failed to load hash cache: {ex.Message}");
-            }
-        }
-
-        private static void SaveHashCache()
-        {
-            try
-            {
-                var json = JsonConvert.SerializeObject(BundleHashCache, Constant.JsonSettings);
-                File.WriteAllText(HashCacheFilePath, json);
-            }
-            catch (Exception ex)
-            {
-                ModLogger.LogError($"Failed to save hash cache: {ex.Message}");
-            }
-        }
 
         private static void CheckDuplicateModelIDs()
         {
