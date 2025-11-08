@@ -213,6 +213,7 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
 
             var velocity = _characterMainControl.Velocity;
+            SetAnimatorFloat(CustomAnimatorHash.VelocityMagnitude, velocity.magnitude);
             SetAnimatorFloat(CustomAnimatorHash.VelocityX, velocity.x);
             SetAnimatorFloat(CustomAnimatorHash.VelocityY, velocity.y);
             SetAnimatorFloat(CustomAnimatorHash.VelocityZ, velocity.z);

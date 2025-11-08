@@ -59,6 +59,7 @@ namespace DuckovCustomModel.Data
         public static readonly int MeleeWeaponTypeID = Animator.StringToHash("MeleeWeaponTypeID"); // int
 
         public static readonly int Hidden = Animator.StringToHash("Hidden"); // bool
+        public static readonly int VelocityMagnitude = Animator.StringToHash("VelocityMagnitude"); // float
         public static readonly int VelocityX = Animator.StringToHash("VelocityX"); // float
         public static readonly int VelocityY = Animator.StringToHash("VelocityY"); // float
         public static readonly int VelocityZ = Animator.StringToHash("VelocityZ"); // float
@@ -118,6 +119,7 @@ namespace DuckovCustomModel.Data
                 new() { Name = "BackpackTypeID", Hash = BackpackTypeID, Type = "int" },
                 new() { Name = "MeleeWeaponTypeID", Hash = MeleeWeaponTypeID, Type = "int" },
                 new() { Name = "Hidden", Hash = Hidden, Type = "bool" },
+                new() { Name = "VelocityMagnitude", Hash = VelocityMagnitude, Type = "float" },
                 new() { Name = "VelocityX", Hash = VelocityX, Type = "float" },
                 new() { Name = "VelocityY", Hash = VelocityY, Type = "float" },
                 new() { Name = "VelocityZ", Hash = VelocityZ, Type = "float" },

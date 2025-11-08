@@ -272,6 +272,7 @@ The Animator Controller can use the following parameters:
 - `VelocityX`: Velocity X component
 - `VelocityY`: Velocity Y component
 - `VelocityZ`: Velocity Z component
+- `VelocityMagnitude`: Velocity magnitude (length of velocity vector)
 - `AimDirX`: Aim direction X component
 - `AimDirY`: Aim direction Y component
 - `AimDirZ`: Aim direction Z component

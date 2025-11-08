@@ -272,6 +272,7 @@ Animator Controller 可以使用以下参数：
 - `VelocityX`：速度 X 分量
 - `VelocityY`：速度 Y 分量
 - `VelocityZ`：速度 Z 分量
+- `VelocityMagnitude`：速度大小（速度向量的长度）
 - `AimDirX`：瞄准方向 X 分量
 - `AimDirY`：瞄准方向 Y 分量
 - `AimDirZ`：瞄准方向 Z 分量
