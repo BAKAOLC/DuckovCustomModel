@@ -16,26 +16,13 @@ namespace DuckovCustomModel.MonoBehaviours
         private static readonly FieldInfo[] OriginalModelSocketFieldInfos =
             CharacterModelSocketUtils.AllSocketFields;
 
-        #region Custom Sockets
-
-        private static readonly Dictionary<FieldInfo, string> CustomModelSocketNames = new()
-        {
-            { CharacterModelSocketUtils.LeftHandSocket, SocketNames.LeftHandLocatorName },
-            { CharacterModelSocketUtils.RightHandSocket, SocketNames.RightHandLocatorName },
-            { CharacterModelSocketUtils.ArmorSocket, SocketNames.ArmorLocatorName },
-            { CharacterModelSocketUtils.HelmetSocket, SocketNames.HelmetLocatorName },
-            { CharacterModelSocketUtils.FaceSocket, SocketNames.FaceLocatorName },
-            { CharacterModelSocketUtils.BackpackSocket, SocketNames.BackpackLocatorName },
-            { CharacterModelSocketUtils.MeleeWeaponSocket, SocketNames.MeleeWeaponLocatorName },
-            { CharacterModelSocketUtils.PopTextSocket, SocketNames.PopTextLocatorName },
-        };
-
-        #endregion
+        private readonly Dictionary<string, Transform> _customModelLocatorCache = [];
 
         private readonly Dictionary<FieldInfo, Transform> _customModelSockets = [];
         private readonly Dictionary<FieldInfo, Transform> _originalModelSockets = [];
 
         private readonly Dictionary<string, List<string>> _soundsByTag = [];
+        private readonly HashSet<GameObject> _usingCustomSocketObjects = [];
 
         public CharacterMainControl? CharacterMainControl { get; private set; }
         public CharacterModel? OriginalCharacterModel { get; private set; }
@@ -87,15 +74,19 @@ namespace DuckovCustomModel.MonoBehaviours
                 {
                     if (socket == null) continue;
                     foreach (Transform child in socket)
-                        if (child.gameObject.activeSelf)
-                            child.gameObject.SetActive(false);
+                        if (child != null && child.gameObject.activeSelf)
+                        {
+                            var dontHide = child.GetComponent<DontHideAsEquipment>();
+                            if (dontHide == null)
+                                child.gameObject.SetActive(false);
+                        }
                 }
             else
                 foreach (var socket in equipmentSockets)
                 {
                     if (socket == null) continue;
                     foreach (Transform child in socket)
-                        if (!child.gameObject.activeSelf)
+                        if (child != null && !child.gameObject.activeSelf)
                             child.gameObject.SetActive(true);
                 }
         }
@@ -141,6 +132,18 @@ namespace DuckovCustomModel.MonoBehaviours
             Target = target;
         }
 
+        public void RegisterCustomSocketObject(GameObject customSocketObject)
+        {
+            if (customSocketObject == null) return;
+            _usingCustomSocketObjects.Add(customSocketObject);
+        }
+
+        public void UnregisterCustomSocketObject(GameObject customSocketObject)
+        {
+            if (customSocketObject == null) return;
+            _usingCustomSocketObjects.Remove(customSocketObject);
+        }
+
         public void RestoreOriginalModel()
         {
             if (OriginalCharacterModel == null)
@@ -155,6 +158,7 @@ namespace DuckovCustomModel.MonoBehaviours
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(true);
 
             RestoreToOriginalModelSockets();
+            RestoreCustomSocketObjects();
 
             if (CustomModelInstance != null) CustomModelInstance.SetActive(false);
 
@@ -179,6 +183,7 @@ namespace DuckovCustomModel.MonoBehaviours
                 if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(true);
 
                 RestoreToOriginalModelSockets();
+                RestoreCustomSocketObjects();
             }
 
             if (CustomModelInstance != null)
@@ -196,6 +201,7 @@ namespace DuckovCustomModel.MonoBehaviours
             }
 
             _customModelSockets.Clear();
+            _customModelLocatorCache.Clear();
             _soundsByTag.Clear();
 
             if (wasHidden)
@@ -222,6 +228,7 @@ namespace DuckovCustomModel.MonoBehaviours
 
             CustomModelInstance.SetActive(true);
             ChangeToCustomModelSockets();
+            UpdateCustomSocketObjects();
 
             if (!IsHiddenOriginalModel)
                 ModLogger.Log("Changed to custom model.");
@@ -310,10 +317,17 @@ namespace DuckovCustomModel.MonoBehaviours
             if (OriginalCharacterModel == null) return;
 
             _customModelSockets.Clear();
-            foreach (var kvp in CustomModelSocketNames)
+            foreach (var kvp in SocketNames.InternalSocketMap)
             {
                 var locatorTransform = SearchLocatorTransform(CustomModelInstance!, kvp.Value);
                 if (locatorTransform != null) _customModelSockets[kvp.Key] = locatorTransform;
+            }
+
+            foreach (var locatorName in SocketNames.ExternalSocketNames)
+            {
+                var locatorTransform = SearchLocatorTransform(CustomModelInstance!, locatorName);
+                if (locatorTransform == null) continue;
+                _customModelLocatorCache[locatorName] = locatorTransform;
             }
         }
 
@@ -330,6 +344,57 @@ namespace DuckovCustomModel.MonoBehaviours
             if (OriginalCharacterModel == null) return null;
             var targetTransformName = Target == ModelTarget.Pet ? "Dog" : "CustomFaceInstance";
             return OriginalCharacterModel.transform.Find(targetTransformName);
+        }
+
+        private void UpdateToCustomSocket(GameObject targetGameObject)
+        {
+            if (OriginalCharacterModel == null || targetGameObject == null)
+                return;
+
+            var customSocketMarker = targetGameObject.GetComponent<CustomSocketMarker>();
+            if (customSocketMarker == null) return;
+
+            if (!_customModelLocatorCache.TryGetValue(customSocketMarker.CustomSocketName, out var customSocket)
+                || customSocket == null)
+                return;
+
+            targetGameObject.transform.SetParent(customSocket, false);
+            targetGameObject.transform.localPosition = Vector3.zero;
+            targetGameObject.transform.localRotation = Quaternion.identity;
+            targetGameObject.transform.localScale = Vector3.one;
+        }
+
+        private void UpdateCustomSocketObjects()
+        {
+            if (OriginalCharacterModel == null || CustomModelInstance == null) return;
+
+            foreach (var customSocketObject in _usingCustomSocketObjects)
+                UpdateToCustomSocket(customSocketObject);
+        }
+
+        private void RestoreCustomSocketObjects()
+        {
+            if (OriginalCharacterModel == null) return;
+
+            foreach (var kvp in _customModelLocatorCache)
+            {
+                var locatorTransform = kvp.Value;
+                if (locatorTransform == null) continue;
+
+                var childrenToRestore = locatorTransform.OfType<Transform>().ToArray();
+                foreach (var child in childrenToRestore)
+                {
+                    var customSocketMarker = child.GetComponent<CustomSocketMarker>();
+                    if (customSocketMarker == null || customSocketMarker.OriginParent == null) continue;
+
+                    child.SetParent(customSocketMarker.OriginParent, false);
+                    child.localPosition = customSocketMarker.SocketOffset ?? Vector3.zero;
+                    child.localRotation = customSocketMarker.SocketRotation != null
+                        ? Quaternion.Euler(customSocketMarker.SocketRotation.Value)
+                        : Quaternion.identity;
+                    child.localScale = customSocketMarker.SocketScale ?? Vector3.one;
+                }
+            }
         }
 
         private void ReplaceModelSocket(FieldInfo socketField, Transform? newSocket)

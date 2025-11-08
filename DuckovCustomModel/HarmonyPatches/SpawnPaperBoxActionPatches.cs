@@ -1,0 +1,52 @@
+using System.Reflection;
+using DuckovCustomModel.Data;
+using DuckovCustomModel.MonoBehaviours;
+using HarmonyLib;
+
+namespace DuckovCustomModel.HarmonyPatches
+{
+    [HarmonyPatch]
+    internal class SpawnPaperBoxActionPatches
+    {
+        private static readonly FieldInfo InstanceField = AccessTools.Field(typeof(SpawnPaperBoxAction), "instance");
+
+        [HarmonyPatch(typeof(SpawnPaperBoxAction), "OnTriggered")]
+        [HarmonyPostfix]
+        // ReSharper disable once InconsistentNaming
+        internal static void SpawnPaperBoxAction_OnTriggered_Postfix(SpawnPaperBoxAction __instance)
+        {
+            var instance = InstanceField.GetValue(__instance) as PaperBox;
+            if (instance == null) return;
+
+            var customSocketMarker = instance.GetComponent<CustomSocketMarker>();
+            if (customSocketMarker == null)
+            {
+                customSocketMarker = instance.gameObject.AddComponent<CustomSocketMarker>();
+                customSocketMarker.CustomSocketName = SocketNames.PaperBox;
+                customSocketMarker.OriginParent = instance.transform.parent;
+            }
+
+            var dontHideAsEquipment = instance.GetComponent<DontHideAsEquipment>();
+            if (dontHideAsEquipment == null) instance.gameObject.AddComponent<DontHideAsEquipment>();
+
+            var modelHandler = instance.GetComponent<ModelHandler>();
+            if (modelHandler == null || !modelHandler.IsInitialized) return;
+
+            modelHandler.RegisterCustomSocketObject(instance.gameObject);
+        }
+
+        [HarmonyPatch(typeof(SpawnPaperBoxAction), "OnDestroy")]
+        [HarmonyPostfix]
+        // ReSharper disable once InconsistentNaming
+        internal static void SpawnPaperBoxAction_OnDestroy_Postfix(SpawnPaperBoxAction __instance)
+        {
+            var instance = InstanceField.GetValue(__instance) as PaperBox;
+            if (instance == null) return;
+
+            var modelHandler = instance.GetComponent<ModelHandler>();
+            if (modelHandler == null || !modelHandler.IsInitialized) return;
+
+            modelHandler.UnregisterCustomSocketObject(instance.gameObject);
+        }
+    }
+}
