@@ -220,11 +220,12 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
+            if (CustomModelInstance != null) CleanupCustomModel();
             InitSoundFilePath(modelBundleInfo, modelInfo);
-            InitializeCustomModel(prefab);
+            InitializeCustomModelInternal(prefab);
         }
 
-        public void InitializeCustomModel(GameObject customModelPrefab)
+        private void InitializeCustomModelInternal(GameObject customModelPrefab)
         {
             if (CharacterMainControl == null)
             {
