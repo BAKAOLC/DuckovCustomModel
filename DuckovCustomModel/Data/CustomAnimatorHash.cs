@@ -1,7 +1,16 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace DuckovCustomModel.Data
 {
+    public class AnimatorParamInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Hash { get; set; }
+        public string Type { get; set; } = string.Empty;
+    }
+
     public static class CustomAnimatorHash
     {
         public static readonly int CurrentCharacterType = Animator.StringToHash("CurrentCharacterType"); // int
@@ -60,5 +69,63 @@ namespace DuckovCustomModel.Data
         public static readonly int InAds = Animator.StringToHash("InAds"); // bool
         public static readonly int AdsValue = Animator.StringToHash("AdsValue"); // float
         public static readonly int AimType = Animator.StringToHash("AimType"); // int
+
+        public static List<AnimatorParamInfo> GetAllParams()
+        {
+            return new List<AnimatorParamInfo>
+            {
+                new() { Name = "CurrentCharacterType", Hash = CurrentCharacterType, Type = "int" },
+                new() { Name = "Grounded", Hash = Grounded, Type = "bool" },
+                new() { Name = "Die", Hash = Die, Type = "bool" },
+                new() { Name = "MoveSpeed", Hash = MoveSpeed, Type = "float" },
+                new() { Name = "MoveDirX", Hash = MoveDirX, Type = "float" },
+                new() { Name = "MoveDirY", Hash = MoveDirY, Type = "float" },
+                new() { Name = "Moving", Hash = IsMoving, Type = "bool" },
+                new() { Name = "Running", Hash = IsRunning, Type = "bool" },
+                new() { Name = "Dashing", Hash = Dashing, Type = "bool" },
+                new() { Name = "Attack", Hash = Attack, Type = "trigger" },
+                new() { Name = "Shoot", Hash = Shoot, Type = "trigger" },
+                new() { Name = "HandState", Hash = HandState, Type = "int" },
+                new() { Name = "GunReady", Hash = GunReady, Type = "bool" },
+                new() { Name = "ShootMode", Hash = ShootMode, Type = "int" },
+                new() { Name = "Loaded", Hash = Loaded, Type = "bool" },
+                new() { Name = "Reloading", Hash = Reloading, Type = "bool" },
+                new() { Name = "AmmoRate", Hash = AmmoRate, Type = "float" },
+                new() { Name = "RightHandOut", Hash = RightHandOut, Type = "bool" },
+                new() { Name = "HealthRate", Hash = HealthRate, Type = "float" },
+                new() { Name = "WaterRate", Hash = WaterRate, Type = "float" },
+                new() { Name = "WeightState", Hash = WeightState, Type = "int" },
+                new() { Name = "WeightRate", Hash = WeightRate, Type = "float" },
+                new() { Name = "HideOriginalEquipment", Hash = HideOriginalEquipment, Type = "bool" },
+                new() { Name = "LeftHandEquip", Hash = LeftHandEquip, Type = "bool" },
+                new() { Name = "RightHandEquip", Hash = RightHandEquip, Type = "bool" },
+                new() { Name = "ArmorEquip", Hash = ArmorEquip, Type = "bool" },
+                new() { Name = "HelmetEquip", Hash = HelmetEquip, Type = "bool" },
+                new() { Name = "HeadsetEquip", Hash = HeadsetEquip, Type = "bool" },
+                new() { Name = "FaceEquip", Hash = FaceEquip, Type = "bool" },
+                new() { Name = "BackpackEquip", Hash = BackpackEquip, Type = "bool" },
+                new() { Name = "MeleeWeaponEquip", Hash = MeleeWeaponEquip, Type = "bool" },
+                new() { Name = "HavePopText", Hash = HavePopText, Type = "bool" },
+                new() { Name = "LeftHandTypeID", Hash = LeftHandTypeID, Type = "int" },
+                new() { Name = "RightHandTypeID", Hash = RightHandTypeID, Type = "int" },
+                new() { Name = "ArmorTypeID", Hash = ArmorTypeID, Type = "int" },
+                new() { Name = "HelmetTypeID", Hash = HelmetTypeID, Type = "int" },
+                new() { Name = "HeadsetTypeID", Hash = HeadsetTypeID, Type = "int" },
+                new() { Name = "FaceTypeID", Hash = FaceTypeID, Type = "int" },
+                new() { Name = "BackpackTypeID", Hash = BackpackTypeID, Type = "int" },
+                new() { Name = "MeleeWeaponTypeID", Hash = MeleeWeaponTypeID, Type = "int" },
+                new() { Name = "Hidden", Hash = Hidden, Type = "bool" },
+                new() { Name = "VelocityX", Hash = VelocityX, Type = "float" },
+                new() { Name = "VelocityY", Hash = VelocityY, Type = "float" },
+                new() { Name = "VelocityZ", Hash = VelocityZ, Type = "float" },
+                new() { Name = "AimDirX", Hash = AimDirX, Type = "float" },
+                new() { Name = "AimDirY", Hash = AimDirY, Type = "float" },
+                new() { Name = "AimDirZ", Hash = AimDirZ, Type = "float" },
+                new() { Name = "ThermalOn", Hash = ThermalOn, Type = "bool" },
+                new() { Name = "InAds", Hash = InAds, Type = "bool" },
+                new() { Name = "AdsValue", Hash = AdsValue, Type = "float" },
+                new() { Name = "AimType", Hash = AimType, Type = "int" },
+            }.OrderBy(p => p.Name).ToList();
+        }
     }
 }

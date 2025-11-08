@@ -20,6 +20,9 @@ namespace DuckovCustomModel.MonoBehaviours
     public class ModelSelectorUI : MonoBehaviour
     {
         private readonly List<ModelBundleInfo> _filteredModelBundles = [];
+        private Vector2 _animatorParamsScrollPosition;
+        private Toggle? _animatorParamsToggle;
+        private Rect _animatorParamsWindowRect = new(10, 10, 600, 800);
         private MonoBehaviour? _cameraController;
         private bool _cameraLockDisabled;
 
@@ -45,16 +48,13 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private InputField? _searchField;
         private string _searchText = string.Empty;
+        private bool _showAnimatorParamsWindow;
         private Dropdown? _targetTypeDropdown;
         private bool _uiActive;
 
         private UIConfig? _uiConfig;
         private GameObject? _uiRoot;
         private UsingModel? _usingModel;
-        private bool _showAnimatorParamsWindow;
-        private Toggle? _animatorParamsToggle;
-        private Vector2 _animatorParamsScrollPosition;
-        private Rect _animatorParamsWindowRect = new(10, 10, 600, 800);
 
         private void Start()
         {
@@ -112,6 +112,19 @@ namespace DuckovCustomModel.MonoBehaviours
             Cursor.lockState = CursorLockMode.None;
         }
 
+        private void OnDestroy()
+        {
+            _refreshCancellationTokenSource?.Cancel();
+            _refreshCancellationTokenSource?.Dispose();
+            _refreshCancellationTokenSource = null;
+
+            ModelListManager.OnRefreshStarted -= OnModelListRefreshStarted;
+            ModelListManager.OnRefreshCompleted -= OnModelListRefreshCompleted;
+            ModelListManager.OnRefreshProgress -= OnModelListRefreshProgress;
+
+            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
+        }
+
         private void OnGUI()
         {
             if (!_showAnimatorParamsWindow) return;
@@ -125,6 +138,10 @@ namespace DuckovCustomModel.MonoBehaviours
             var animator = currentHandler.CustomAnimator;
             if (animator == null) return;
 
+            const float windowWidth = 600f;
+            const float windowHeight = 800f;
+            _animatorParamsWindowRect.width = windowWidth;
+            _animatorParamsWindowRect.height = windowHeight;
             _animatorParamsWindowRect = GUI.Window(100, _animatorParamsWindowRect, DrawAnimatorParamsWindow, "动画器参数");
         }
 
@@ -136,28 +153,30 @@ namespace DuckovCustomModel.MonoBehaviours
             var animator = currentHandler.CustomAnimator;
             if (animator == null) return;
 
-            var scrollViewRect = new Rect(10, 30, _animatorParamsWindowRect.width - 20, _animatorParamsWindowRect.height - 50);
-            var contentRect = new Rect(0, 0, _animatorParamsWindowRect.width - 40, 0);
+            const float windowWidth = 600f;
+            const float windowHeight = 800f;
+            const float scrollViewX = 10f;
+            const float scrollViewY = 30f;
+            const float scrollViewWidth = windowWidth - 20f;
+            const float scrollViewHeight = windowHeight - 60f;
+            const float contentWidth = windowWidth - 40f;
+
+            var paramInfos = GetCustomAnimatorParams();
+            var scrollViewRect = new Rect(scrollViewX, scrollViewY, scrollViewWidth, scrollViewHeight);
+            var contentRect = new Rect(0, 0, contentWidth, 0);
+
+            const float lineHeight = 20f;
+            const float spacing = 5f;
+
+            _animatorParamsScrollPosition =
+                GUI.BeginScrollView(scrollViewRect, _animatorParamsScrollPosition, contentRect);
 
             var yPos = 0f;
-            var lineHeight = 20f;
-            var spacing = 5f;
-
-            foreach (var param in animator.parameters)
+            foreach (var paramInfo in paramInfos)
             {
-                var paramHeight = lineHeight;
-                contentRect.height = Mathf.Max(contentRect.height, yPos + paramHeight);
-                yPos += paramHeight + spacing;
-            }
-
-            _animatorParamsScrollPosition = GUI.BeginScrollView(scrollViewRect, _animatorParamsScrollPosition, contentRect);
-
-            yPos = 0f;
-            foreach (var param in animator.parameters)
-            {
-                var paramRect = new Rect(10, yPos, contentRect.width - 20, lineHeight);
-                var paramName = $"{param.name} ({param.type})";
-                var paramValue = GetParameterValue(animator, param);
+                var paramRect = new Rect(10, yPos, contentWidth - 20, lineHeight);
+                var paramName = $"{paramInfo.Name} ({paramInfo.Type})";
+                var paramValue = GetParameterValue(animator, paramInfo);
 
                 GUI.Label(paramRect, $"{paramName}: {paramValue}");
                 yPos += lineHeight + spacing;
@@ -165,39 +184,40 @@ namespace DuckovCustomModel.MonoBehaviours
 
             GUI.EndScrollView();
 
-            if (GUI.Button(new Rect(10, _animatorParamsWindowRect.height - 30, 100, 20), "关闭"))
+            if (GUI.Button(new(10, windowHeight - 30, 100, 20), "关闭"))
             {
                 _showAnimatorParamsWindow = false;
                 if (_animatorParamsToggle != null)
                     _animatorParamsToggle.isOn = false;
             }
 
-            GUI.DragWindow();
+            GUI.DragWindow(new(0, 0, windowWidth, 20));
         }
 
-        private static string GetParameterValue(Animator animator, AnimatorControllerParameter param)
+        private static List<AnimatorParamInfo> GetCustomAnimatorParams()
         {
-            return param.type switch
+            return CustomAnimatorHash.GetAllParams();
+        }
+
+        private static string GetParameterValue(Animator animator, AnimatorParamInfo paramInfo)
+        {
+            if (animator == null) return "N/A";
+
+            try
             {
-                AnimatorControllerParameterType.Float => animator.GetFloat(param.nameHash).ToString("F3"),
-                AnimatorControllerParameterType.Int => animator.GetInteger(param.nameHash).ToString(),
-                AnimatorControllerParameterType.Bool => animator.GetBool(param.nameHash).ToString(),
-                AnimatorControllerParameterType.Trigger => "Trigger",
-                _ => "Unknown"
-            };
-        }
-
-        private void OnDestroy()
-        {
-            _refreshCancellationTokenSource?.Cancel();
-            _refreshCancellationTokenSource?.Dispose();
-            _refreshCancellationTokenSource = null;
-
-            ModelListManager.OnRefreshStarted -= OnModelListRefreshStarted;
-            ModelListManager.OnRefreshCompleted -= OnModelListRefreshCompleted;
-            ModelListManager.OnRefreshProgress -= OnModelListRefreshProgress;
-
-            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
+                return paramInfo.Type switch
+                {
+                    "float" => animator.GetFloat(paramInfo.Hash).ToString("F3"),
+                    "int" => animator.GetInteger(paramInfo.Hash).ToString(),
+                    "bool" => animator.GetBool(paramInfo.Hash).ToString(),
+                    "trigger" => "Trigger",
+                    _ => "Unknown",
+                };
+            }
+            catch
+            {
+                return "N/A";
+            }
         }
 
         private void OnLanguageChanged(SystemLanguage language)
