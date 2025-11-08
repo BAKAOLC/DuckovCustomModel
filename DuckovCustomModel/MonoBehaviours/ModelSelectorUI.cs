@@ -841,9 +841,6 @@ namespace DuckovCustomModel.MonoBehaviours
             _hideEquipmentConfig.SetHideEquipment(ModelTarget.Character, value);
             ConfigManager.SaveConfigToFile(_hideEquipmentConfig, "HideEquipmentConfig.json");
             ModLogger.Log($"HideEquipment setting for {ModelTarget.Character} changed to: {value}");
-
-            if (_currentTargetType == ModelTarget.Character)
-                RefreshModelList();
         }
 
         private void OnHidePetEquipmentToggleChanged(bool value)
@@ -853,9 +850,6 @@ namespace DuckovCustomModel.MonoBehaviours
             _hideEquipmentConfig.SetHideEquipment(ModelTarget.Pet, value);
             ConfigManager.SaveConfigToFile(_hideEquipmentConfig, "HideEquipmentConfig.json");
             ModLogger.Log($"HideEquipment setting for {ModelTarget.Pet} changed to: {value}");
-
-            if (_currentTargetType == ModelTarget.Pet)
-                RefreshModelList();
         }
 
         private void BuildAICharacterHideEquipmentToggle(string nameKey)
@@ -1065,6 +1059,9 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (_isRefreshing) return;
 
+            if (_modelScrollRect != null)
+                _modelScrollRect.verticalNormalizedPosition = 1f;
+
             UpdateModelHandler();
 
             _refreshCancellationTokenSource = new();
@@ -1086,6 +1083,9 @@ namespace DuckovCustomModel.MonoBehaviours
                 linkedCts?.Dispose();
                 return;
             }
+
+            if (_modelScrollRect != null)
+                _modelScrollRect.verticalNormalizedPosition = 1f;
 
             _isRefreshing = true;
             UpdateRefreshButtonState(true);
@@ -1141,6 +1141,9 @@ namespace DuckovCustomModel.MonoBehaviours
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
 
                 await ApplyModelAfterRefresh(cancellationToken);
+
+                if (_modelScrollRect != null)
+                    _modelScrollRect.verticalNormalizedPosition = 1f;
             }
             catch (OperationCanceledException)
             {
@@ -1492,6 +1495,9 @@ namespace DuckovCustomModel.MonoBehaviours
                     }
 
                 ModelListManager.ApplyModelToTarget(target, model.ModelID, true);
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                RefreshModelList();
             }
             catch (Exception ex)
             {
@@ -1529,6 +1535,8 @@ namespace DuckovCustomModel.MonoBehaviours
 
                 ModelListManager.RestoreOriginalModelForTarget(_currentTargetType);
             }
+
+            RefreshModelList();
         }
 
         private void OnSearchChanged(string text)
@@ -1999,6 +2007,9 @@ namespace DuckovCustomModel.MonoBehaviours
                     }
 
                 ModelListManager.ApplyModelToAICharacter(nameKey, model.ModelID, true);
+
+                await UniTask.Yield(PlayerLoopTiming.Update);
+                RefreshModelList();
             }
             catch (Exception ex)
             {
