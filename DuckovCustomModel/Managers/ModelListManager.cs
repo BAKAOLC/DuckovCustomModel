@@ -229,19 +229,6 @@ namespace DuckovCustomModel.Managers
             var handlers = ModelManager.GetAllModelHandlers(target);
             if (handlers.Count == 0) return;
 
-            if (!forceReapply)
-            {
-                var allApplied = true;
-                foreach (var handler in handlers)
-                    if (!handler.IsHiddenOriginalModel)
-                    {
-                        allApplied = false;
-                        break;
-                    }
-
-                if (allApplied) return;
-            }
-
             if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))
             {
                 ModLogger.LogWarning($"Model '{modelID}' not found for {target}");
@@ -252,6 +239,24 @@ namespace DuckovCustomModel.Managers
             {
                 ModLogger.LogWarning($"Model '{modelID}' is not compatible with {target}");
                 return;
+            }
+
+            if (!forceReapply)
+            {
+                var allApplied = true;
+                var needsAudioRestore = false;
+                foreach (var handler in handlers)
+                {
+                    if (!handler.IsHiddenOriginalModel)
+                    {
+                        allApplied = false;
+                        break;
+                    }
+
+                    if (!handler.HasAnySounds() && modelInfo.CustomSounds is { Length: > 0 }) needsAudioRestore = true;
+                }
+
+                if (allApplied && !needsAudioRestore) return;
             }
 
             foreach (var handler in handlers)
@@ -309,19 +314,6 @@ namespace DuckovCustomModel.Managers
             var handlers = ModelManager.GetAICharacterModelHandlers(nameKey);
             if (handlers.Count == 0) return;
 
-            if (!forceReapply)
-            {
-                var allApplied = true;
-                foreach (var handler in handlers)
-                    if (!handler.IsHiddenOriginalModel)
-                    {
-                        allApplied = false;
-                        break;
-                    }
-
-                if (allApplied) return;
-            }
-
             if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))
             {
                 ModLogger.LogWarning($"Model '{modelID}' not found for AICharacter '{nameKey}'");
@@ -332,6 +324,24 @@ namespace DuckovCustomModel.Managers
             {
                 ModLogger.LogWarning($"Model '{modelID}' is not compatible with AICharacter '{nameKey}'");
                 return;
+            }
+
+            if (!forceReapply)
+            {
+                var allApplied = true;
+                var needsAudioRestore = false;
+                foreach (var handler in handlers)
+                {
+                    if (!handler.IsHiddenOriginalModel)
+                    {
+                        allApplied = false;
+                        break;
+                    }
+
+                    if (!handler.HasAnySounds() && modelInfo.CustomSounds is { Length: > 0 }) needsAudioRestore = true;
+                }
+
+                if (allApplied && !needsAudioRestore) return;
             }
 
             foreach (var handler in handlers)
@@ -350,18 +360,25 @@ namespace DuckovCustomModel.Managers
             if (ModBehaviour.Instance?.UsingModel == null) return;
             if (string.IsNullOrEmpty(modelID)) return;
 
+            if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))
+            {
+                ModLogger.LogWarning($"Model '{modelID}' not found for {target}");
+                return;
+            }
+
             var needsReapply = false;
             if (bundlesToReload is { Count: > 0 })
-                if (ModelManager.FindModelByID(modelID, out var bundleInfo, out _))
-                    if (bundlesToReload.Contains(bundleInfo.BundleName))
-                        needsReapply = true;
+                if (bundlesToReload.Contains(bundleInfo.BundleName))
+                    needsReapply = true;
 
             if (!needsReapply)
             {
                 var handlers = ModelManager.GetAllModelHandlers(target);
                 var allApplied = handlers.All(handler => handler.IsHiddenOriginalModel);
+                var needsAudioRestore = handlers.Any(handler =>
+                    !handler.HasAnySounds() && modelInfo.CustomSounds is { Length: > 0 });
 
-                if (allApplied) return;
+                if (allApplied && !needsAudioRestore) return;
             }
 
             ApplyModelToTarget(target, modelID, true);
