@@ -14,6 +14,7 @@
   "NoModel": "不使用模型（恢復原始模型）",
   "TargetType": "目標類型:",
   "TargetCharacter": "角色",
-  "TargetPet": "寵物"
+  "TargetPet": "寵物",
+  "TargetAICharacter": "AI角色"
 }
 

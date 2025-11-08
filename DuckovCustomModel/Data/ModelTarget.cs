@@ -4,5 +4,6 @@
     {
         Character,
         Pet,
+        AICharacter,
     }
 }

@@ -14,6 +14,7 @@
   "NoModel": "No Model (Restore Original)",
   "TargetType": "Target Type:",
   "TargetCharacter": "Character",
-  "TargetPet": "Pet"
+  "TargetPet": "Pet",
+  "TargetAICharacter": "AI Character"
 }
 

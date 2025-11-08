@@ -12,6 +12,8 @@ namespace DuckovCustomModel.Configs
     {
         public Dictionary<ModelTarget, string> ModelIDs { get; set; } = [];
 
+        public Dictionary<string, string> AICharacterModelIDs { get; set; } = [];
+
         public string GetModelID(ModelTarget target)
         {
             return ModelIDs.TryGetValue(target, out var modelID) ? modelID : string.Empty;
@@ -25,13 +27,29 @@ namespace DuckovCustomModel.Configs
                 ModelIDs[target] = modelID;
         }
 
+        public string GetAICharacterModelID(string nameKey)
+        {
+            return AICharacterModelIDs.TryGetValue(nameKey, out var modelID) ? modelID : string.Empty;
+        }
+
+        public void SetAICharacterModelID(string nameKey, string modelID)
+        {
+            if (string.IsNullOrEmpty(modelID))
+                AICharacterModelIDs.Remove(nameKey);
+            else
+                AICharacterModelIDs[nameKey] = modelID;
+        }
+
         public override void LoadDefault()
         {
             ModelIDs.Clear();
+            AICharacterModelIDs.Clear();
         }
 
         public override bool Validate()
         {
+            ModelIDs ??= [];
+            AICharacterModelIDs ??= [];
             return false;
         }
 
@@ -39,6 +57,7 @@ namespace DuckovCustomModel.Configs
         {
             if (other is not UsingModel otherSetting) return;
             ModelIDs = new(otherSetting.ModelIDs);
+            AICharacterModelIDs = new(otherSetting.AICharacterModelIDs);
         }
 
         public override void LoadFromFile(string filePath, bool autoSaveOnLoad = true)

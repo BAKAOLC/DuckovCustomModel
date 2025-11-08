@@ -276,11 +276,72 @@ namespace DuckovCustomModel.Managers
 
             foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
             {
+                if (target == ModelTarget.AICharacter) continue;
+
                 var modelID = ModBehaviour.Instance.UsingModel.GetModelID(target);
                 if (string.IsNullOrEmpty(modelID)) continue;
 
                 ApplyModelToTarget(target, modelID, forceReapply);
             }
+
+            ApplyAllAICharacterModelsFromConfig(forceReapply);
+        }
+
+        public static void ApplyAllAICharacterModelsFromConfig(bool forceReapply = false)
+        {
+            if (ModBehaviour.Instance?.UsingModel == null) return;
+
+            foreach (var nameKey in AICharacters.SupportedAICharacters)
+            {
+                var modelID = ModBehaviour.Instance.UsingModel.GetAICharacterModelID(nameKey);
+                if (string.IsNullOrEmpty(modelID)) continue;
+
+                ApplyModelToAICharacter(nameKey, modelID, forceReapply);
+            }
+        }
+
+        public static void ApplyModelToAICharacter(string nameKey, string modelID, bool forceReapply = false)
+        {
+            if (ModBehaviour.Instance?.UsingModel == null) return;
+            if (string.IsNullOrEmpty(modelID)) return;
+            if (string.IsNullOrEmpty(nameKey)) return;
+
+            var handlers = ModelManager.GetAICharacterModelHandlers(nameKey);
+            if (handlers.Count == 0) return;
+
+            if (!forceReapply)
+            {
+                var allApplied = true;
+                foreach (var handler in handlers)
+                    if (!handler.IsHiddenOriginalModel)
+                    {
+                        allApplied = false;
+                        break;
+                    }
+
+                if (allApplied) return;
+            }
+
+            if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))
+            {
+                ModLogger.LogWarning($"Model '{modelID}' not found for AICharacter '{nameKey}'");
+                return;
+            }
+
+            if (!modelInfo.CompatibleWithAICharacter(nameKey))
+            {
+                ModLogger.LogWarning($"Model '{modelID}' is not compatible with AICharacter '{nameKey}'");
+                return;
+            }
+
+            foreach (var handler in handlers)
+            {
+                handler.InitializeCustomModel(bundleInfo, modelInfo);
+                handler.ChangeToCustomModel();
+            }
+
+            ModLogger.Log(
+                $"Applied model '{modelInfo.Name}' ({modelID}) to {handlers.Count} AICharacter '{nameKey}' object(s)");
         }
 
         public static void ApplyModelToTargetAfterRefresh(ModelTarget target, string modelID,

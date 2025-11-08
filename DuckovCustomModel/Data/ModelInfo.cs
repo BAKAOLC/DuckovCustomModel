@@ -19,6 +19,8 @@ namespace DuckovCustomModel.Data
 
         public ModelTarget[] Target { get; set; } = [ModelTarget.Character];
 
+        public string[] SupportedAICharacters { get; set; } = [];
+
         public bool Validate()
         {
             if (string.IsNullOrWhiteSpace(ModelID)) return false;
@@ -50,6 +52,14 @@ namespace DuckovCustomModel.Data
         public bool CompatibleWithType(ModelTarget modelTarget)
         {
             return Array.Exists(Target, target => target == modelTarget);
+        }
+
+        public bool CompatibleWithAICharacter(string nameKey)
+        {
+            if (!CompatibleWithType(ModelTarget.AICharacter)) return false;
+            if (nameKey == AICharacters.AllAICharactersKey) return true;
+            if (SupportedAICharacters is not { Length: > 0 }) return false;
+            return Array.Exists(SupportedAICharacters, key => key == AICharacters.AllAICharactersKey || key == nameKey);
         }
     }
 }

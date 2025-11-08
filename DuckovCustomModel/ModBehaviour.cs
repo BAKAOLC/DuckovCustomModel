@@ -150,11 +150,18 @@ namespace DuckovCustomModel
         {
             var priorityModelIDs = new List<string>();
             if (UsingModel != null)
+            {
                 priorityModelIDs.AddRange(from ModelTarget target in Enum.GetValues(typeof(ModelTarget))
+                    where target != ModelTarget.AICharacter
                     select UsingModel.GetModelID(target)
                     into modelID
                     where !string.IsNullOrEmpty(modelID)
                     select modelID);
+
+                priorityModelIDs.AddRange(AICharacters.SupportedAICharacters
+                    .Select(nameKey => UsingModel.GetAICharacterModelID(nameKey))
+                    .Where(modelID => !string.IsNullOrEmpty(modelID)));
+            }
 
             ModelListManager.RefreshModelList(priorityModelIDs);
         }

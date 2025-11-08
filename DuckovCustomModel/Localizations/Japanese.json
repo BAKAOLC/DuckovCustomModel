@@ -14,6 +14,7 @@
   "NoModel": "モデルを使用しない（元のモデルに復元）",
   "TargetType": "対象タイプ:",
   "TargetCharacter": "キャラクター",
-  "TargetPet": "ペット"
+  "TargetPet": "ペット",
+  "TargetAICharacter": "AIキャラクター"
 }
 

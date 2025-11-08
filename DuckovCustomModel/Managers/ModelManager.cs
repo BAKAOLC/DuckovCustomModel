@@ -220,6 +220,24 @@ namespace DuckovCustomModel.Managers
             return handlers;
         }
 
+        public static List<ModelHandler> GetAICharacterModelHandlers(string nameKey)
+        {
+            var handlers = new List<ModelHandler>();
+
+            if (LevelManager.Instance == null) return handlers;
+            if (string.IsNullOrEmpty(nameKey)) return handlers;
+
+            var allHandlers = Object.FindObjectsByType<ModelHandler>(FindObjectsSortMode.None);
+            foreach (var handler in allHandlers)
+            {
+                if (handler.Target != ModelTarget.AICharacter || !handler.IsInitialized) continue;
+                if (handler.CharacterMainControl?.characterPreset?.nameKey != nameKey) continue;
+                handlers.Add(handler);
+            }
+
+            return handlers;
+        }
+
 
         private static void CheckDuplicateModelIDs()
         {

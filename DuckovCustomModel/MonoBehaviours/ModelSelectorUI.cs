@@ -30,6 +30,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private bool _cameraLockDisabled;
 
         private CharacterInputControl? _charInput;
+        private string? _currentAICharacterNameKey;
         private ModelTarget _currentTargetType = ModelTarget.Character;
         private HideEquipmentConfig? _hideEquipmentConfig;
         private bool _isInitialized;
@@ -461,7 +462,14 @@ namespace DuckovCustomModel.MonoBehaviours
             _targetTypeDropdown.options.Clear();
             _targetTypeDropdown.options.Add(new(ModelSelectorUILocalization.TargetCharacter));
             _targetTypeDropdown.options.Add(new(ModelSelectorUILocalization.TargetPet));
-            _targetTypeDropdown.value = _currentTargetType == ModelTarget.Character ? 0 : 1;
+            _targetTypeDropdown.options.Add(new(ModelSelectorUILocalization.TargetAICharacter));
+            _targetTypeDropdown.value = _currentTargetType switch
+            {
+                ModelTarget.Character => 0,
+                ModelTarget.Pet => 1,
+                ModelTarget.AICharacter => 2,
+                _ => 0,
+            };
             _targetTypeDropdown.onValueChanged.AddListener(OnTargetTypeChanged);
 
             var labelObj = CreateText("Label", dropdownObj.transform, "", 14, Color.white);
@@ -479,6 +487,10 @@ namespace DuckovCustomModel.MonoBehaviours
             SetupRectTransform(arrowObj, new(1, 0.5f), new(1, 0.5f), new(20, 20), new(1, 0.5f), new(-10, 0));
             _targetTypeDropdown.targetGraphic = arrowImage;
 
+            const int itemHeight = 30;
+            var optionCount = _targetTypeDropdown.options.Count;
+            var calculatedHeight = optionCount * itemHeight;
+
             var templateObj = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
             templateObj.transform.SetParent(dropdownObj.transform, false);
             var templateImage = templateObj.GetComponent<Image>();
@@ -488,7 +500,7 @@ namespace DuckovCustomModel.MonoBehaviours
             templateRect.anchorMax = new(1, 0);
             templateRect.pivot = new(0.5f, 1);
             templateRect.anchoredPosition = new(0, 2);
-            templateRect.sizeDelta = new(0, 60);
+            templateRect.sizeDelta = new(0, calculatedHeight);
             templateObj.SetActive(false);
             _targetTypeDropdown.template = templateRect;
 
@@ -550,7 +562,14 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private void OnTargetTypeChanged(int value)
         {
-            _currentTargetType = value == 0 ? ModelTarget.Character : ModelTarget.Pet;
+            _currentTargetType = value switch
+            {
+                0 => ModelTarget.Character,
+                1 => ModelTarget.Pet,
+                2 => ModelTarget.AICharacter,
+                _ => ModelTarget.Character,
+            };
+            _currentAICharacterNameKey = null;
             UpdateModelHandler();
             RefreshModelList();
         }
@@ -874,11 +893,21 @@ namespace DuckovCustomModel.MonoBehaviours
 
             var priorityModelIDs = new List<string>();
             if (_usingModel != null)
+            {
                 priorityModelIDs.AddRange(from ModelTarget target in Enum.GetValues(typeof(ModelTarget))
+                    where target != ModelTarget.AICharacter
                     select _usingModel.GetModelID(target)
                     into modelID
                     where !string.IsNullOrEmpty(modelID)
                     select modelID);
+
+                foreach (var nameKey in AICharacters.SupportedAICharacters)
+                {
+                    var modelID = _usingModel.GetAICharacterModelID(nameKey);
+                    if (!string.IsNullOrEmpty(modelID))
+                        priorityModelIDs.Add(modelID);
+                }
+            }
 
             ModelListManager.RefreshModelList(priorityModelIDs);
         }
@@ -918,35 +947,46 @@ namespace DuckovCustomModel.MonoBehaviours
 
                 _filteredModelBundles.Clear();
 
-                var searchLower = _searchText.ToLowerInvariant();
-                foreach (var bundle in ModelManager.ModelBundles
-                             .Where(bundle => string.IsNullOrEmpty(searchLower)
-                                              || bundle.BundleName.ToLowerInvariant().Contains(searchLower)
-                                              || bundle.Models.Any(m => m.Name.ToLowerInvariant()
-                                                                            .Contains(searchLower)
-                                                                        || m.ModelID.ToLowerInvariant()
-                                                                            .Contains(searchLower))))
+                if (_currentTargetType == ModelTarget.AICharacter)
                 {
-                    var compatibleModels = bundle.Models.Where(m => m.CompatibleWithType(_currentTargetType)).ToArray();
-                    if (compatibleModels.Length <= 0) continue;
-                    var filteredBundle = bundle.CreateFilteredCopy(compatibleModels);
-                    _filteredModelBundles.Add(filteredBundle);
+                    if (string.IsNullOrEmpty(_currentAICharacterNameKey))
+                        await BuildAICharacterListAsync(cancellationToken);
+                    else
+                        await BuildAICharacterModelListAsync(_currentAICharacterNameKey, cancellationToken);
                 }
-
-                BuildNoneModelButton();
-
-                var totalCount = _filteredModelBundles.Sum(b => b.Models.Length);
-                var count = 0;
-                foreach (var bundle in _filteredModelBundles)
-                foreach (var model in bundle.Models)
+                else
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    await BuildModelButtonAsync(bundle, model, cancellationToken);
-                    count++;
+                    var searchLower = _searchText.ToLowerInvariant();
+                    foreach (var bundle in ModelManager.ModelBundles
+                                 .Where(bundle => string.IsNullOrEmpty(searchLower)
+                                                  || bundle.BundleName.ToLowerInvariant().Contains(searchLower)
+                                                  || bundle.Models.Any(m => m.Name.ToLowerInvariant()
+                                                                                .Contains(searchLower)
+                                                                            || m.ModelID.ToLowerInvariant()
+                                                                                .Contains(searchLower))))
+                    {
+                        var compatibleModels = bundle.Models.Where(m => m.CompatibleWithType(_currentTargetType))
+                            .ToArray();
+                        if (compatibleModels.Length <= 0) continue;
+                        var filteredBundle = bundle.CreateFilteredCopy(compatibleModels);
+                        _filteredModelBundles.Add(filteredBundle);
+                    }
 
-                    if (count % 5 != 0) continue;
-                    UpdateRefreshButtonText(ModelSelectorUILocalization.GetLoadingProgress(count, totalCount));
-                    await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                    BuildNoneModelButton();
+
+                    var totalCount = _filteredModelBundles.Sum(b => b.Models.Length);
+                    var count = 0;
+                    foreach (var bundle in _filteredModelBundles)
+                    foreach (var model in bundle.Models)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await BuildModelButtonAsync(bundle, model, cancellationToken);
+                        count++;
+
+                        if (count % 5 != 0) continue;
+                        UpdateRefreshButtonText(ModelSelectorUILocalization.GetLoadingProgress(count, totalCount));
+                        await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+                    }
                 }
 
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
@@ -982,10 +1022,34 @@ namespace DuckovCustomModel.MonoBehaviours
 
                 foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
                 {
+                    if (target == ModelTarget.AICharacter) continue;
+
                     var modelID = _usingModel.GetModelID(target);
                     if (string.IsNullOrEmpty(modelID)) continue;
 
                     ModelListManager.ApplyModelToTargetAfterRefresh(target, modelID, bundlesToReload);
+                }
+
+                foreach (var nameKey in AICharacters.SupportedAICharacters)
+                {
+                    var modelID = _usingModel.GetAICharacterModelID(nameKey);
+                    if (string.IsNullOrEmpty(modelID)) continue;
+
+                    var needsReapply = false;
+                    if (bundlesToReload is { Count: > 0 })
+                        if (ModelManager.FindModelByID(modelID, out var bundleInfo, out _))
+                            if (bundlesToReload.Contains(bundleInfo.BundleName))
+                                needsReapply = true;
+
+                    if (!needsReapply)
+                    {
+                        var handlers = ModelManager.GetAICharacterModelHandlers(nameKey);
+                        var allApplied = handlers.All(handler => handler.IsHiddenOriginalModel);
+
+                        if (allApplied) continue;
+                    }
+
+                    ModelListManager.ApplyModelToAICharacter(nameKey, modelID, true);
                 }
             }
             catch (OperationCanceledException)
@@ -1021,7 +1085,10 @@ namespace DuckovCustomModel.MonoBehaviours
                 await AssetBundleManager.CheckBundleStatusAsync(bundle, model, cancellationToken);
             var hasError = !isValid;
 
-            var isInUse = _usingModel != null && _usingModel.GetModelID(_currentTargetType) == model.ModelID;
+            var isInUse = _currentTargetType == ModelTarget.AICharacter
+                ? _usingModel != null && !string.IsNullOrEmpty(_currentAICharacterNameKey) &&
+                  _usingModel.GetAICharacterModelID(_currentAICharacterNameKey) == model.ModelID
+                : _usingModel != null && _usingModel.GetModelID(_currentTargetType) == model.ModelID;
 
             var buttonObj = new GameObject($"ModelButton_{model.ModelID}", typeof(Image), typeof(Button),
                 typeof(LayoutElement));
@@ -1234,10 +1301,26 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
-            _usingModel.SetModelID(_currentTargetType, model.ModelID);
-            ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
+            if (_currentTargetType == ModelTarget.AICharacter)
+            {
+                if (string.IsNullOrEmpty(_currentAICharacterNameKey))
+                {
+                    ModLogger.LogError("AICharacter nameKey is null.");
+                    return;
+                }
 
-            ApplyModelWithRefreshCheck(_currentTargetType, bundle, model).Forget();
+                _usingModel.SetAICharacterModelID(_currentAICharacterNameKey, model.ModelID);
+                ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
+
+                ApplyAICharacterModelWithRefreshCheck(_currentAICharacterNameKey, bundle, model).Forget();
+            }
+            else
+            {
+                _usingModel.SetModelID(_currentTargetType, model.ModelID);
+                ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
+
+                ApplyModelWithRefreshCheck(_currentTargetType, bundle, model).Forget();
+            }
         }
 
         private async UniTaskVoid ApplyModelWithRefreshCheck(ModelTarget target, ModelBundleInfo bundle,
@@ -1276,10 +1359,29 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
-            _usingModel.SetModelID(_currentTargetType, string.Empty);
-            ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
+            if (_currentTargetType == ModelTarget.AICharacter)
+            {
+                if (string.IsNullOrEmpty(_currentAICharacterNameKey))
+                {
+                    ModLogger.LogError("AICharacter nameKey is null.");
+                    return;
+                }
 
-            ModelListManager.RestoreOriginalModelForTarget(_currentTargetType);
+                _usingModel.SetAICharacterModelID(_currentAICharacterNameKey, string.Empty);
+                ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
+
+                var handlers = ModelManager.GetAICharacterModelHandlers(_currentAICharacterNameKey);
+                foreach (var handler in handlers)
+                    handler.RestoreOriginalModel();
+            }
+            else
+            {
+                _usingModel.SetModelID(_currentTargetType, string.Empty);
+                ConfigManager.SaveConfigToFile(_usingModel, "UsingModel.json");
+
+                ModelListManager.RestoreOriginalModelForTarget(_currentTargetType);
+            }
+
             HidePanel();
         }
 
@@ -1540,6 +1642,222 @@ namespace DuckovCustomModel.MonoBehaviours
             colors.pressedColor = pressedColor ?? new(0.4f, 0.6f, 0.8f, 1);
             colors.selectedColor = selectedColor ?? new(0.5f, 0.7f, 0.9f, 1);
             button.colors = colors;
+        }
+
+        private async UniTask BuildAICharacterListAsync(CancellationToken cancellationToken)
+        {
+            if (_modelListContent == null) return;
+
+            var searchLower = _searchText.ToLowerInvariant();
+            var aiCharacters = AICharacters.SupportedAICharacters
+                .Where(nameKey => nameKey != AICharacters.AllAICharactersKey)
+                .Where(nameKey =>
+                {
+                    if (string.IsNullOrEmpty(searchLower)) return true;
+                    return nameKey.ToLowerInvariant().Contains(searchLower) ||
+                           LocalizationManager.GetPlainText(nameKey).ToLowerInvariant().Contains(searchLower);
+                })
+                .ToList();
+
+            var count = 0;
+            foreach (var nameKey in aiCharacters)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                BuildAICharacterButtonAsync(nameKey);
+                count++;
+
+                if (count % 5 != 0) continue;
+                UpdateRefreshButtonText(ModelSelectorUILocalization.GetLoadingProgress(count, aiCharacters.Count));
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+        }
+
+        private void BuildAICharacterButtonAsync(string nameKey)
+        {
+            if (_modelListContent == null) return;
+
+            var displayName = nameKey == AICharacters.AllAICharactersKey
+                ? "* (所有AI角色)"
+                : LocalizationManager.GetPlainText(nameKey);
+            var hasModel = _usingModel != null && !string.IsNullOrEmpty(_usingModel.GetAICharacterModelID(nameKey));
+
+            var modelCount = CountCompatibleModelsForAICharacter(nameKey);
+
+            var buttonObj = new GameObject($"AICharacterButton_{nameKey}", typeof(Image), typeof(Button),
+                typeof(LayoutElement));
+            buttonObj.transform.SetParent(_modelListContent.transform, false);
+
+            var buttonImage = buttonObj.GetComponent<Image>();
+            Color baseColor = hasModel ? new(0.15f, 0.22f, 0.18f, 0.8f) : new(0.15f, 0.18f, 0.22f, 0.8f);
+            buttonImage.color = baseColor;
+
+            var buttonRect = buttonObj.GetComponent<RectTransform>();
+            buttonRect.sizeDelta = new(1140, 80);
+
+            var layoutElement = buttonObj.GetComponent<LayoutElement>();
+            layoutElement.minHeight = 80;
+            layoutElement.preferredHeight = 80;
+            layoutElement.preferredWidth = 1140;
+            layoutElement.flexibleWidth = 0;
+
+            var outline = buttonObj.AddComponent<Outline>();
+            outline.effectColor = hasModel
+                ? new(0.3f, 0.6f, 0.4f, 0.8f)
+                : new(0.3f, 0.35f, 0.4f, 0.6f);
+            outline.effectDistance = new(1, -1);
+
+            var nameText = CreateText("Name", buttonObj.transform, displayName, 16, Color.white);
+            var nameTextComponent = nameText.GetComponent<Text>();
+            nameTextComponent.fontStyle = FontStyle.Bold;
+            var nameRect = nameText.GetComponent<RectTransform>();
+            nameRect.anchorMin = new(0, 0);
+            nameRect.anchorMax = new(1, 1);
+            nameRect.pivot = new(0, 0.5f);
+            nameRect.offsetMin = new(20, 0);
+            nameRect.offsetMax = new(-200, 0);
+
+            var countText = CreateText("Count", buttonObj.transform, $"{modelCount} 个模型", 14,
+                new(0.7f, 0.7f, 0.7f, 1));
+            var countTextComponent = countText.GetComponent<Text>();
+            var countRect = countText.GetComponent<RectTransform>();
+            countRect.anchorMin = new(1, 0);
+            countRect.anchorMax = new(1, 1);
+            countRect.pivot = new(1, 0.5f);
+            countRect.offsetMin = new(-180, 0);
+            countRect.offsetMax = new(-20, 0);
+
+            var button = buttonObj.GetComponent<Button>();
+            if (hasModel)
+                SetupButtonColors(button, new(1, 1, 1, 1), new(0.5f, 0.8f, 0.6f, 1), new(0.4f, 0.7f, 0.5f, 1),
+                    new(0.5f, 0.8f, 0.6f, 1));
+            else
+                SetupButtonColors(button, new(1, 1, 1, 1), new(0.5f, 0.7f, 0.9f, 1), new(0.4f, 0.6f, 0.8f, 1),
+                    new(0.5f, 0.7f, 0.9f, 1));
+
+            button.onClick.AddListener(() => OnAICharacterSelected(nameKey));
+        }
+
+        private int CountCompatibleModelsForAICharacter(string nameKey)
+        {
+            var count = 0;
+            foreach (var bundle in ModelManager.ModelBundles)
+            foreach (var model in bundle.Models)
+                if (model.CompatibleWithAICharacter(nameKey))
+                    count++;
+            return count;
+        }
+
+        private void OnAICharacterSelected(string nameKey)
+        {
+            _currentAICharacterNameKey = nameKey;
+            RefreshModelList();
+        }
+
+        private async UniTask BuildAICharacterModelListAsync(string nameKey, CancellationToken cancellationToken)
+        {
+            if (_modelListContent == null) return;
+
+            var backButton = new GameObject("BackButton", typeof(Image), typeof(Button), typeof(LayoutElement));
+            backButton.transform.SetParent(_modelListContent.transform, false);
+            backButton.transform.SetAsFirstSibling();
+
+            var backButtonImage = backButton.GetComponent<Image>();
+            backButtonImage.color = new(0.2f, 0.2f, 0.3f, 0.8f);
+
+            var backButtonRect = backButton.GetComponent<RectTransform>();
+            backButtonRect.sizeDelta = new(1140, 60);
+
+            var backLayoutElement = backButton.GetComponent<LayoutElement>();
+            backLayoutElement.minHeight = 60;
+            backLayoutElement.preferredHeight = 60;
+            backLayoutElement.preferredWidth = 1140;
+            backLayoutElement.flexibleWidth = 0;
+
+            var backOutline = backButton.AddComponent<Outline>();
+            backOutline.effectColor = new(0.3f, 0.35f, 0.4f, 0.6f);
+            backOutline.effectDistance = new(1, -1);
+
+            var backDisplayName = nameKey == AICharacters.AllAICharactersKey
+                ? "* (所有AI角色)"
+                : LocalizationManager.GetPlainText(nameKey);
+            var backText = CreateText("BackText", backButton.transform,
+                $"← {backDisplayName}", 16,
+                Color.white, TextAnchor.MiddleCenter);
+            var backTextComponent = backText.GetComponent<Text>();
+            backTextComponent.fontStyle = FontStyle.Bold;
+            var backTextRect = backText.GetComponent<RectTransform>();
+            backTextRect.anchorMin = Vector2.zero;
+            backTextRect.anchorMax = Vector2.one;
+            backTextRect.sizeDelta = Vector2.zero;
+
+            var backButtonComponent = backButton.GetComponent<Button>();
+            SetupButtonColors(backButtonComponent, new(1, 1, 1, 1), new(0.5f, 0.7f, 0.9f, 1), new(0.4f, 0.6f, 0.8f, 1),
+                new(0.5f, 0.7f, 0.9f, 1));
+            backButtonComponent.onClick.AddListener(() =>
+            {
+                _currentAICharacterNameKey = null;
+                RefreshModelList();
+            });
+
+            BuildNoneModelButton();
+
+            var searchLower = _searchText.ToLowerInvariant();
+            foreach (var bundle in ModelManager.ModelBundles
+                         .Where(bundle => string.IsNullOrEmpty(searchLower)
+                                          || bundle.BundleName.ToLowerInvariant().Contains(searchLower)
+                                          || bundle.Models.Any(m => m.Name.ToLowerInvariant()
+                                                                        .Contains(searchLower)
+                                                                    || m.ModelID.ToLowerInvariant()
+                                                                        .Contains(searchLower))))
+            {
+                var compatibleModels = bundle.Models
+                    .Where(m => m.CompatibleWithAICharacter(nameKey)).ToArray();
+                if (compatibleModels.Length <= 0) continue;
+                var filteredBundle = bundle.CreateFilteredCopy(compatibleModels);
+                _filteredModelBundles.Add(filteredBundle);
+            }
+
+            var totalCount = _filteredModelBundles.Sum(b => b.Models.Length);
+            var count = 0;
+            foreach (var bundle in _filteredModelBundles)
+            foreach (var model in bundle.Models)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await BuildModelButtonAsync(bundle, model, cancellationToken);
+                count++;
+
+                if (count % 5 != 0) continue;
+                UpdateRefreshButtonText(ModelSelectorUILocalization.GetLoadingProgress(count, totalCount));
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+        }
+
+        private async UniTaskVoid ApplyAICharacterModelWithRefreshCheck(string nameKey, ModelBundleInfo bundle,
+            ModelInfo model)
+        {
+            try
+            {
+                if (ModelListManager.IsRefreshing && ModelListManager.CurrentRefreshingBundles != null)
+                    if (ModelListManager.CurrentRefreshingBundles.Contains(bundle.BundleName))
+                    {
+                        var handlers = ModelManager.GetAICharacterModelHandlers(nameKey);
+                        foreach (var handler in handlers.Where(handler => handler.IsHiddenOriginalModel))
+                            handler.CleanupCustomModel();
+
+                        ModLogger.Log(
+                            $"Temporarily cleaned up AICharacter '{nameKey}' custom model while waiting for bundle update: {bundle.BundleName}");
+
+                        await ModelListManager.WaitForRefreshCompletion();
+                        await UniTask.Yield(PlayerLoopTiming.Update);
+                    }
+
+                ModelListManager.ApplyModelToAICharacter(nameKey, model.ModelID, true);
+                HidePanel();
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Failed to apply model '{model.ModelID}' to AICharacter '{nameKey}': {ex.Message}");
+            }
         }
     }
 }
