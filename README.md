@@ -64,6 +64,11 @@ UI 界面相关配置。
   "ModelIDs": {
     "Character": "",
     "Pet": ""
+  },
+  "AICharacterModelIDs": {
+    "Cname_Wolf": "",
+    "Cname_Scav": "",
+    "*": ""
   }
 }
 ```
@@ -77,19 +82,31 @@ UI 界面相关配置。
     - 可通过模型选择界面修改，修改后会自动保存到此文件
   - 当添加新的 `ModelTarget` 类型时，配置会自动支持该类型
 
+- `AICharacterModelIDs`：字典类型，键为 AI 角色名称键（如 `"Cname_Wolf"`、`"Cname_Scav"`），值为模型 ID（字符串，为空时使用原始模型）
+  - 可以为每个 AI 角色单独配置模型
+  - 特殊键 `"*"`：为所有 AI 角色设置默认模型
+    - 当某个 AI 角色没有单独配置模型时，会使用 `"*"` 对应的模型
+    - 如果 `"*"` 也没有配置，则使用原始模型
+  - 可通过模型选择界面修改，修改后会自动保存到此文件
+
 **兼容性说明**：如果配置文件中存在旧的 `ModelID` 或 `PetModelID` 字段，系统会自动迁移到新的 `ModelIDs` 字典格式。迁移完成后，配置文件将只包含 `ModelIDs` 字典。
 
 ## 模型选择界面
 
 模型选择界面提供了以下功能：
 
-- **目标类型切换**：可以在"角色"和"宠物"之间切换，分别管理角色模型和宠物模型
+- **目标类型切换**：可以在"角色"、"宠物"和"AI角色"之间切换，分别管理角色模型、宠物模型和 AI 角色模型
 - **模型浏览**：滚动查看所有可用的模型（会根据当前选择的目标类型过滤显示）
 - **模型搜索**：通过模型名称、ID 等关键词快速搜索模型
 - **模型选择**：点击模型按钮即可应用该模型到所有属于该目标类型的对象
 - **模型信息**：每个模型卡片显示模型名称、ID、作者、版本以及所属的 Bundle 名称
+- **AI 角色选择**：当选择"AI角色"目标类型时，需要先选择具体的 AI 角色，然后为该角色选择模型
 - **设置选项**：在界面底部可以切换"隐藏原有装备"选项
-  - 分别有"隐藏角色装备"和"隐藏宠物装备"两个选项
+  - 分别有"隐藏角色装备"和"隐藏宠物装备"选项
+  - 此选项会立即保存到配置文件
+  - 影响 Animator 的 `HideOriginalEquipment` 参数值
+- **AI 角色装备设置**：当选择"AI角色"目标类型并选择具体 AI 角色后，在模型列表页面会显示针对该 AI 角色的"隐藏装备"选项
+  - 每个 AI 角色都有独立的隐藏装备设置
   - 此选项会立即保存到配置文件
   - 影响 Animator 的 `HideOriginalEquipment` 参数值
 
@@ -155,9 +172,13 @@ UI 界面相关配置。
 - `ThumbnailPath`（可选）：缩略图路径，相对于模型包文件夹的外部文件路径（如 `"thumbnail.png"`）
 - `PrefabPath`（必需）：模型 Prefab 在 AssetBundle 内的资源路径（如 `"Assets/Model.prefab"`）
 - `Target`（可选）：模型适用的目标类型数组（默认：`["Character"]`）
-  - 可选值：`"Character"`（角色）、`"Pet"`（宠物）
-  - 可以同时包含多个值，表示该模型同时适用于角色和宠物
+  - 可选值：`"Character"`（角色）、`"Pet"`（宠物）、`"AICharacter"`（AI 角色）
+  - 可以同时包含多个值，表示该模型同时适用于多个目标类型
   - 模型选择界面会根据当前选择的目标类型过滤显示兼容的模型
+- `SupportedAICharacters`（可选）：支持的 AI 角色名称键数组（仅在 `Target` 包含 `"AICharacter"` 时有效）
+  - 可以指定该模型适用于哪些 AI 角色
+  - 特殊值 `"*"`：表示该模型适用于所有 AI 角色
+  - 如果为空数组且 `Target` 包含 `"AICharacter"`，则该模型不会应用于任何 AI 角色
 - `CustomSounds`（可选）：自定义音效信息数组，支持为音效配置标签
   - 每个音效可以配置多个标签（`normal`、`surprise`、`death`）
   - 未指定标签时，默认为 `["normal"]`
@@ -379,12 +400,85 @@ Animator Controller 可以使用以下参数：
 
 - 音效文件应放置在模型包文件夹内
 - 支持游戏使用的音频格式（通常为 WAV、OGG 等）
-- 音效文件路径在 `SoundInfo.Path` 中指定，相对于模型包文件夹
+- 音效文件路径在 `Path` 中指定，相对于模型包文件夹
 - 例如：如果模型包文件夹为 `MyModel/`，音效文件为 `MyModel/sounds/voice.wav`，则 `Path` 应设置为 `"sounds/voice.wav"`
 
 ### 注意事项
 
 - 如果模型没有配置音效，不会影响其他功能
+
+## AI 角色适配
+
+模组支持为游戏中的 AI 角色配置自定义模型，可以为不同的 AI 角色配置不同的模型。
+
+### 配置 AI 角色模型
+
+#### 在 bundleinfo.json 中配置
+
+在模型的 `bundleinfo.json` 中，需要：
+
+1. 在 `Target` 数组中包含 `"AICharacter"`，表示该模型适用于 AI 角色
+2. 在 `SupportedAICharacters` 数组中指定支持的 AI 角色名称键
+
+示例：
+
+```json
+{
+  "ModelID": "ai_model_id",
+  "Name": "AI 模型",
+  "Target": ["AICharacter"],
+  "SupportedAICharacters": ["Cname_Wolf", "Cname_Scav", "*"]
+}
+```
+
+- 如果 `SupportedAICharacters` 包含 `"*"`，表示该模型适用于所有 AI 角色
+- 如果 `SupportedAICharacters` 包含具体的 AI 角色名称键，表示该模型仅适用于这些 AI 角色
+- 如果 `SupportedAICharacters` 为空数组，则该模型不会应用于任何 AI 角色
+
+#### 在 UsingModel.json 中配置
+
+在 `UsingModel.json` 中，可以为每个 AI 角色单独配置模型：
+
+```json
+{
+  "AICharacterModelIDs": {
+    "Cname_Wolf": "wolf_model_id",
+    "Cname_Scav": "scav_model_id",
+    "*": "default_ai_model_id"
+  }
+}
+```
+
+配置优先级：
+
+1. 首先检查该 AI 角色是否有单独配置的模型
+2. 如果没有，则检查 `"*"` 对应的默认模型
+3. 如果都没有，则使用原始模型
+
+### 使用模型选择界面
+
+1. 打开模型选择界面（默认按键：`\`）
+2. 在目标类型下拉菜单中选择"AI角色"
+3. 选择要配置的 AI 角色（或选择"所有 AI 角色"来设置默认模型）
+4. 浏览并选择要应用的模型
+5. 配置会自动保存到 `UsingModel.json`
+
+### 隐藏 AI 角色装备
+
+可以为每个 AI 角色单独配置是否隐藏原有装备：
+
+- 在模型选择界面中，选择"AI角色"目标类型
+- 选择具体的 AI 角色
+- 在模型列表页面顶部会显示针对该 AI 角色的"隐藏装备"切换选项
+- 每个 AI 角色都有独立的隐藏装备设置
+- 配置会自动保存到 `HideEquipmentConfig.json`
+
+### 注意事项
+
+- AI 角色模型需要满足与角色模型相同的要求（定位锚点、Animator 配置等）
+- 模型必须在其 `bundleinfo.json` 中明确声明支持 AI 角色（`Target` 包含 `"AICharacter"`）
+- 模型必须在其 `SupportedAICharacters` 中声明支持该 AI 角色，或包含 `"*"` 表示支持所有 AI 角色
+- 如果模型没有正确配置，AI 角色将使用原始模型
 
 
 

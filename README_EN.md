@@ -64,6 +64,11 @@ Current model configuration in use. Uses `ModelTarget` as the key, making it eas
   "ModelIDs": {
     "Character": "",
     "Pet": ""
+  },
+  "AICharacterModelIDs": {
+    "Cname_Wolf": "",
+    "Cname_Scav": "",
+    "*": ""
   }
 }
 ```
@@ -77,21 +82,33 @@ Current model configuration in use. Uses `ModelTarget` as the key, making it eas
     - Can be modified through the model selection interface, changes will be automatically saved to this file
   - When new `ModelTarget` types are added, the configuration will automatically support that type
 
+- `AICharacterModelIDs`: Dictionary type, where keys are AI character name keys (e.g., `"Cname_Wolf"`, `"Cname_Scav"`), and values are model IDs (string, uses original model when empty)
+  - Can configure models for each AI character individually
+  - Special key `"*"`: Sets default model for all AI characters
+    - When an AI character doesn't have an individual model configured, the model corresponding to `"*"` will be used
+    - If `"*"` is also not configured, the original model will be used
+  - Can be modified through the model selection interface, changes will be automatically saved to this file
+
 **Compatibility Note**: If old `ModelID` or `PetModelID` fields exist in the configuration file, the system will automatically migrate them to the new `ModelIDs` dictionary format. After migration, the configuration file will only contain the `ModelIDs` dictionary.
 
 ## Model Selection Interface
 
 The model selection interface provides the following features:
 
-- **Target Type Switching**: Switch between "Character" and "Pet" to manage character models and pet models separately
+- **Target Type Switching**: Switch between "Character", "Pet", and "AI Character" to manage character models, pet models, and AI character models separately
 - **Model Browsing**: Scroll to view all available models (filtered based on the currently selected target type)
 - **Model Search**: Quickly search models by name, ID, and other keywords
 - **Model Selection**: Click the model button to apply the model to all objects of that target type
 - **Model Information**: Each model card displays the model name, ID, author, version, and the Bundle name it belongs to
+- **AI Character Selection**: When selecting "AI Character" target type, first select a specific AI character, then select a model for that character
 - **Settings Options**: Toggle "Hide Original Equipment" options at the bottom of the interface
   - Separate options for "Hide Character Equipment" and "Hide Pet Equipment"
   - These options are immediately saved to the configuration file
   - Affect the Animator's `HideOriginalEquipment` parameter value
+- **AI Character Equipment Settings**: When selecting "AI Character" target type and a specific AI character, a "Hide Equipment" option for that AI character will be displayed at the top of the model list page
+  - Each AI character has an independent hide equipment setting
+  - This option is immediately saved to the configuration file
+  - Affects the Animator's `HideOriginalEquipment` parameter value
 
 ### Opening the Model Selection Interface
 
@@ -155,9 +172,13 @@ Model Bundle Folder/
 - `ThumbnailPath` (optional): Thumbnail path, external file path relative to the model bundle folder (e.g., `"thumbnail.png"`)
 - `PrefabPath` (required): Model Prefab resource path inside the AssetBundle (e.g., `"Assets/Model.prefab"`)
 - `Target` (optional): Array of target types the model applies to (default: `["Character"]`)
-  - Valid values: `"Character"`, `"Pet"`
-  - Can contain multiple values, indicating the model is compatible with both characters and pets
+  - Valid values: `"Character"`, `"Pet"`, `"AICharacter"`
+  - Can contain multiple values, indicating the model is compatible with multiple target types
   - The model selection interface will filter and display compatible models based on the currently selected target type
+- `SupportedAICharacters` (optional): Array of supported AI character name keys (only effective when `Target` contains `"AICharacter"`)
+  - Can specify which AI characters this model applies to
+  - Special value `"*"`: Indicates the model applies to all AI characters
+  - If empty array and `Target` contains `"AICharacter"`, the model will not be applied to any AI character
 - `CustomSounds` (optional): Array of custom sound information, supports configuring tags for sounds
   - Each sound can be configured with multiple tags (`normal`, `surprise`, `death`)
   - Defaults to `["normal"]` when no tags are specified
@@ -379,10 +400,83 @@ Sounds can be configured in `ModelInfo` within `bundleinfo.json`:
 
 - Sound files should be placed inside the model bundle folder
 - Supports audio formats used by the game (typically WAV, OGG, etc.)
-- Sound file paths are specified in `SoundInfo.Path`, relative to the model bundle folder
+- Sound file paths are specified in `Path`, relative to the model bundle folder
 - Example: If the model bundle folder is `MyModel/` and the sound file is `MyModel/sounds/voice.wav`, then `Path` should be set to `"sounds/voice.wav"`
 
 ### Notes
 
 - If a model has no sounds configured, it will not affect other functionality
+
+## AI Character Adaptation
+
+The mod supports configuring custom models for AI characters in the game, allowing different models to be configured for different AI characters.
+
+### Configuring AI Character Models
+
+#### Configuring in bundleinfo.json
+
+In the model's `bundleinfo.json`, you need to:
+
+1. Include `"AICharacter"` in the `Target` array, indicating the model applies to AI characters
+2. Specify supported AI character name keys in the `SupportedAICharacters` array
+
+Example:
+
+```json
+{
+  "ModelID": "ai_model_id",
+  "Name": "AI Model",
+  "Target": ["AICharacter"],
+  "SupportedAICharacters": ["Cname_Wolf", "Cname_Scav", "*"]
+}
+```
+
+- If `SupportedAICharacters` contains `"*"`, it means the model applies to all AI characters
+- If `SupportedAICharacters` contains specific AI character name keys, the model only applies to those AI characters
+- If `SupportedAICharacters` is an empty array, the model will not be applied to any AI character
+
+#### Configuring in UsingModel.json
+
+In `UsingModel.json`, you can configure models for each AI character individually:
+
+```json
+{
+  "AICharacterModelIDs": {
+    "Cname_Wolf": "wolf_model_id",
+    "Cname_Scav": "scav_model_id",
+    "*": "default_ai_model_id"
+  }
+}
+```
+
+Configuration priority:
+
+1. First check if the AI character has an individually configured model
+2. If not, check the default model corresponding to `"*"`
+3. If neither exists, use the original model
+
+### Using the Model Selection Interface
+
+1. Open the model selection interface (default key: `\`)
+2. Select "AI Character" from the target type dropdown menu
+3. Select the AI character to configure (or select "All AI Characters" to set the default model)
+4. Browse and select the model to apply
+5. Configuration will be automatically saved to `UsingModel.json`
+
+### Hiding AI Character Equipment
+
+You can configure whether to hide original equipment for each AI character individually:
+
+- In the model selection interface, select "AI Character" target type
+- Select a specific AI character
+- A "Hide Equipment" toggle option for that AI character will be displayed at the top of the model list page
+- Each AI character has an independent hide equipment setting
+- Configuration will be automatically saved to `HideEquipmentConfig.json`
+
+### Notes
+
+- AI character models need to meet the same requirements as character models (locator points, Animator configuration, etc.)
+- Models must explicitly declare support for AI characters in their `bundleinfo.json` (`Target` contains `"AICharacter"`)
+- Models must declare support for the AI character in their `SupportedAICharacters`, or include `"*"` to indicate support for all AI characters
+- If the model is not properly configured, AI characters will use the original model
 
