@@ -7,7 +7,7 @@ namespace DuckovCustomModel
     {
         public const string ModID = "DuckovCustomModel";
         public const string ModName = "Duckov Custom Model";
-        public const string ModVersion = "1.3.0";
+        public const string ModVersion = "1.4.0";
         public const string HarmonyId = "com.ritsukage.DuckovCustomModel";
 
         public const string SoundTagNormal = "normal";

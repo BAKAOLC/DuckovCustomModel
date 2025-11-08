@@ -163,10 +163,17 @@ namespace DuckovCustomModel.MonoBehaviours
 
             var paramInfos = GetCustomAnimatorParams();
             var scrollViewRect = new Rect(scrollViewX, scrollViewY, scrollViewWidth, scrollViewHeight);
-            var contentRect = new Rect(0, 0, contentWidth, 0);
 
             const float lineHeight = 20f;
             const float spacing = 5f;
+            const float itemPadding = 10f;
+
+            var totalHeight = paramInfos.Count > 0
+                ? paramInfos.Count * lineHeight + (paramInfos.Count - 1) * spacing
+                : scrollViewHeight;
+            totalHeight = Math.Max(totalHeight, scrollViewHeight);
+
+            var contentRect = new Rect(0, 0, contentWidth, totalHeight);
 
             _animatorParamsScrollPosition =
                 GUI.BeginScrollView(scrollViewRect, _animatorParamsScrollPosition, contentRect);
@@ -174,7 +181,7 @@ namespace DuckovCustomModel.MonoBehaviours
             var yPos = 0f;
             foreach (var paramInfo in paramInfos)
             {
-                var paramRect = new Rect(10, yPos, contentWidth - 20, lineHeight);
+                var paramRect = new Rect(itemPadding, yPos, contentWidth - itemPadding * 2, lineHeight);
                 var paramName = $"{paramInfo.Name} ({paramInfo.Type})";
                 var paramValue = GetParameterValue(animator, paramInfo);
 
