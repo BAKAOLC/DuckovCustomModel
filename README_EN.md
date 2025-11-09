@@ -215,6 +215,7 @@ Model Bundle Folder/
       "Version": "1.0.0",
       "ThumbnailPath": "thumbnail.png",
       "PrefabPath": "Assets/Model.prefab",
+      "DeathLootBoxPrefabPath": "Assets/DeathLootBox.prefab",
       "Target": ["Character", "AICharacter"],
       "SupportedAICharacters": ["Cname_Wolf", "Cname_Scav", "*"],
       "CustomSounds": [
@@ -257,6 +258,9 @@ Model Bundle Folder/
 - `Version` (optional): Model version number
 - `ThumbnailPath` (optional): Thumbnail path, external file path relative to the model bundle folder (e.g., `"thumbnail.png"`)
 - `PrefabPath` (required): Model Prefab resource path inside the AssetBundle (e.g., `"Assets/Model.prefab"`)
+- `DeathLootBoxPrefabPath` (optional): Death loot box Prefab resource path inside the AssetBundle (e.g., `"Assets/DeathLootBox.prefab"`)
+  - When a character using this model dies, if this field is configured, the death loot box will use the custom Prefab to replace the default model
+  - If this field is not configured, the death loot box will use the default model
 - `Target` (optional): Array of target types the model applies to (default: `["Character"]`)
   - Valid values: `"Character"`, `"Pet"`, `"AICharacter"`
   - Can contain multiple values, indicating the model is compatible with multiple target types

@@ -215,6 +215,7 @@ UI 界面相关配置。
       "Version": "1.0.0",
       "ThumbnailPath": "thumbnail.png",
       "PrefabPath": "Assets/Model.prefab",
+      "DeathLootBoxPrefabPath": "Assets/DeathLootBox.prefab",
       "Target": ["Character", "AICharacter"],
       "SupportedAICharacters": ["Cname_Wolf", "Cname_Scav", "*"],
       "CustomSounds": [
@@ -257,6 +258,9 @@ UI 界面相关配置。
 - `Version`（可选）：模型版本号
 - `ThumbnailPath`（可选）：缩略图路径，相对于模型包文件夹的外部文件路径（如 `"thumbnail.png"`）
 - `PrefabPath`（必需）：模型 Prefab 在 AssetBundle 内的资源路径（如 `"Assets/Model.prefab"`）
+- `DeathLootBoxPrefabPath`（可选）：死亡战利品箱 Prefab 在 AssetBundle 内的资源路径（如 `"Assets/DeathLootBox.prefab"`）
+  - 当角色使用该模型并死亡时，如果配置了此字段，死亡战利品箱会使用自定义的 Prefab 替换默认模型
+  - 如果未配置此字段，死亡战利品箱将使用默认模型
 - `Target`（可选）：模型适用的目标类型数组（默认：`["Character"]`）
   - 可选值：`"Character"`（角色）、`"Pet"`（宠物）、`"AICharacter"`（AI 角色）
   - 可以同时包含多个值，表示该模型同时适用于多个目标类型
