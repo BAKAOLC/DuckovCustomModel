@@ -2,6 +2,10 @@
 
 [English](CHANGELOG_EN.md) | 中文
 
+## v1.6.4
+
+- 新增 `WeaponInLocator` Animator 参数，用于指示武器当前所在的定位点类型（左手、右手或近战武器）
+
 ## v1.6.3
 
 - 模型增加了 `DeathLootBoxPrefabPath` 字段，用于指定死亡战利品箱的样式（可选，默认为原版模型）

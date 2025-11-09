@@ -28,6 +28,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private ItemAgent_Gun? _gunAgent;
         private DuckovItemAgent? _holdAgent;
         private bool _initialized;
+        private Transform? _itemAgentHolderCurrentUsingSocketCache;
         private ModelHandler? _modelHandler;
 
         private bool HasAnimationIfDashCanControl
@@ -329,32 +330,63 @@ namespace DuckovCustomModel.MonoBehaviours
             #region Left Hand/Right Hand/Melee Weapon
 
             var currentHoldItemAgent = _characterMainControl.CurrentHoldItemAgent;
-            var leftHandTypeID = 0;
-            var rightHandTypeID = 0;
-            var meleeWeaponTypeID = 0;
-            if (currentHoldItemAgent != null)
-                switch (currentHoldItemAgent.handheldSocket)
+            var agentHolder = _characterMainControl.agentHolder;
+            if (agentHolder != null)
+            {
+                if (agentHolder.CurrentHoldItemAgent != currentHoldItemAgent)
                 {
-                    case HandheldSocketTypes.leftHandSocket:
-                        leftHandTypeID = currentHoldItemAgent.Item.TypeID;
-                        break;
-                    case HandheldSocketTypes.meleeWeapon:
-                        meleeWeaponTypeID = currentHoldItemAgent.Item.TypeID;
-                        break;
-                    case HandheldSocketTypes.normalHandheld:
-                    default:
-                        rightHandTypeID = currentHoldItemAgent.Item.TypeID;
-                        break;
+                    _itemAgentHolderCurrentUsingSocketCache = agentHolder.CurrentUsingSocket;
+                    var leftHandTypeID = 0;
+                    var rightHandTypeID = 0;
+                    var meleeWeaponTypeID = 0;
+                    var weaponInLocator = 0;
+                    if (currentHoldItemAgent != null)
+                        switch (currentHoldItemAgent.handheldSocket)
+                        {
+                            case HandheldSocketTypes.leftHandSocket:
+                                var leftHandSocket = CharacterModelSocketUtils.GetLeftHandSocket(_characterModel);
+                                if (leftHandSocket != null)
+                                {
+                                    leftHandTypeID = currentHoldItemAgent.Item.TypeID;
+                                    weaponInLocator = (int)HandheldSocketTypes.leftHandSocket;
+                                }
+                                else
+                                {
+                                    rightHandTypeID = currentHoldItemAgent.Item.TypeID;
+                                    weaponInLocator = (int)HandheldSocketTypes.normalHandheld;
+                                }
+
+                                break;
+                            case HandheldSocketTypes.meleeWeapon:
+                                meleeWeaponTypeID = currentHoldItemAgent.Item.TypeID;
+                                weaponInLocator = (int)HandheldSocketTypes.meleeWeapon;
+                                break;
+                            case HandheldSocketTypes.normalHandheld:
+                            default:
+                                rightHandTypeID = currentHoldItemAgent.Item.TypeID;
+                                weaponInLocator = (int)HandheldSocketTypes.normalHandheld;
+                                break;
+                        }
+
+                    SetAnimatorInteger(CustomAnimatorHash.WeaponInLocator, weaponInLocator);
+                    SetAnimatorInteger(CustomAnimatorHash.LeftHandTypeID, leftHandTypeID);
+                    SetAnimatorBool(CustomAnimatorHash.LeftHandEquip, leftHandTypeID > 0);
+                    SetAnimatorInteger(CustomAnimatorHash.RightHandTypeID, rightHandTypeID);
+                    SetAnimatorBool(CustomAnimatorHash.RightHandEquip, rightHandTypeID > 0);
+                    SetAnimatorInteger(CustomAnimatorHash.MeleeWeaponTypeID, meleeWeaponTypeID);
+                    SetAnimatorBool(CustomAnimatorHash.MeleeWeaponEquip, meleeWeaponTypeID > 0);
                 }
-
-            SetAnimatorInteger(CustomAnimatorHash.LeftHandTypeID, leftHandTypeID);
-            SetAnimatorBool(CustomAnimatorHash.LeftHandEquip, leftHandTypeID > 0);
-
-            SetAnimatorInteger(CustomAnimatorHash.RightHandTypeID, rightHandTypeID);
-            SetAnimatorBool(CustomAnimatorHash.RightHandEquip, rightHandTypeID > 0);
-
-            SetAnimatorInteger(CustomAnimatorHash.MeleeWeaponTypeID, meleeWeaponTypeID);
-            SetAnimatorBool(CustomAnimatorHash.MeleeWeaponEquip, meleeWeaponTypeID > 0);
+            }
+            else
+            {
+                SetAnimatorInteger(CustomAnimatorHash.WeaponInLocator, 0);
+                SetAnimatorInteger(CustomAnimatorHash.LeftHandTypeID, 0);
+                SetAnimatorBool(CustomAnimatorHash.LeftHandEquip, false);
+                SetAnimatorInteger(CustomAnimatorHash.RightHandTypeID, 0);
+                SetAnimatorBool(CustomAnimatorHash.RightHandEquip, false);
+                SetAnimatorInteger(CustomAnimatorHash.MeleeWeaponTypeID, 0);
+                SetAnimatorBool(CustomAnimatorHash.MeleeWeaponEquip, false);
+            }
 
             #endregion
 

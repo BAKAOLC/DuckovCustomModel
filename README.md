@@ -399,6 +399,12 @@ Animator Controller 可以使用以下参数：
   - `1`：正常（0.25 < WeightRate ≤ 0.75）
   - `2`：超重（0.75 < WeightRate ≤ 1.0）
   - `3`：过载（WeightRate > 1.0）
+- `WeaponInLocator`：武器当前所在的定位点类型（无武器时为 `0`）
+  - `0`：无武器
+  - `1`：右手定位点（`normalHandheld`）
+  - `2`：近战武器定位点（`meleeWeapon`）
+  - `3`：左手定位点（`leftHandSocket`）
+  - 当武器类型为左手但模型没有左手定位点时，会自动使用右手定位点（值为 `1`）
 - `LeftHandTypeID`：左手装备的 TypeID（无装备时为 `0`）
 - `RightHandTypeID`：右手装备的 TypeID（无装备时为 `0`）
 - `ArmorTypeID`：护甲装备的 TypeID（无装备时为 `0`）

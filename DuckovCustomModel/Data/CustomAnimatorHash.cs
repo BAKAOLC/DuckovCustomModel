@@ -39,6 +39,7 @@ namespace DuckovCustomModel.Data
         public static readonly int WeightRate = Animator.StringToHash("WeightRate"); // float
 
         public static readonly int HideOriginalEquipment = Animator.StringToHash("HideOriginalEquipment"); // bool
+        public static readonly int WeaponInLocator = Animator.StringToHash("WeaponInLocator"); // bool
         public static readonly int LeftHandEquip = Animator.StringToHash("LeftHandEquip"); // bool
         public static readonly int RightHandEquip = Animator.StringToHash("RightHandEquip"); // bool
         public static readonly int ArmorEquip = Animator.StringToHash("ArmorEquip"); // bool

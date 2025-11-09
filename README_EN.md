@@ -399,6 +399,12 @@ The Animator Controller can use the following parameters:
   - `1`: Normal (0.25 < WeightRate ≤ 0.75)
   - `2`: Heavy (0.75 < WeightRate ≤ 1.0)
   - `3`: Overloaded (WeightRate > 1.0)
+- `WeaponInLocator`: Current locator type where the weapon is placed (0 when no weapon)
+  - `0`: No weapon
+  - `1`: Right hand locator (`normalHandheld`)
+  - `2`: Melee weapon locator (`meleeWeapon`)
+  - `3`: Left hand locator (`leftHandSocket`)
+  - When weapon type is left hand but the model doesn't have a left hand locator, it will automatically use the right hand locator (value is `1`)
 - `LeftHandTypeID`: TypeID of equipment in left hand (0 when no equipment)
 - `RightHandTypeID`: TypeID of equipment in right hand (0 when no equipment)
 - `ArmorTypeID`: TypeID of armor equipment (0 when no equipment)
