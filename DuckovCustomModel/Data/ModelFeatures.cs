@@ -5,7 +5,3 @@ namespace DuckovCustomModel.Data
         public const string NoAutoShaderReplace = "NoAutoShaderReplace";
     }
 }
-
-
-
-

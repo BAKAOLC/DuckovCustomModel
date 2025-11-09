@@ -54,6 +54,7 @@ namespace DuckovCustomModel.MonoBehaviours
         }
 
         public ModelTarget Target { get; private set; }
+        public string? NameKey => CharacterMainControl?.characterPreset?.nameKey;
 
         public bool IsInitialized { get; private set; }
 
@@ -64,9 +65,24 @@ namespace DuckovCustomModel.MonoBehaviours
         private void Update()
         {
             if (!IsInitialized || CharacterMainControl == null) return;
-            if (Target == ModelTarget.Character) return;
             if (!HasIdleSounds()) return;
             if (CharacterMainControl.Health != null && CharacterMainControl.Health.IsDead) return;
+
+            if (ModBehaviour.Instance?.IdleAudioConfig != null)
+            {
+                if (Target == ModelTarget.AICharacter)
+                {
+                    var nameKey = NameKey;
+                    if (string.IsNullOrEmpty(nameKey) ||
+                        !ModBehaviour.Instance.IdleAudioConfig.IsAICharacterIdleAudioEnabled(nameKey))
+                        return;
+                }
+                else
+                {
+                    if (!ModBehaviour.Instance.IdleAudioConfig.IsIdleAudioEnabled(Target))
+                        return;
+                }
+            }
 
             if (!(Time.time >= _nextIdleAudioTime)) return;
             PlayIdleAudio();
@@ -265,7 +281,21 @@ namespace DuckovCustomModel.MonoBehaviours
             InitSoundFilePath(modelBundleInfo, modelInfo);
             InitializeCustomModelInternal(prefab, modelInfo);
 
-            if (Target == ModelTarget.AICharacter && HasIdleSounds()) ScheduleNextIdleAudio();
+            if (!HasIdleSounds()) return;
+            if (Target == ModelTarget.AICharacter)
+            {
+                var nameKey = NameKey;
+                if (ModBehaviour.Instance?.IdleAudioConfig == null ||
+                    string.IsNullOrEmpty(nameKey) ||
+                    ModBehaviour.Instance.IdleAudioConfig.IsAICharacterIdleAudioEnabled(nameKey))
+                    ScheduleNextIdleAudio();
+            }
+            else
+            {
+                if (ModBehaviour.Instance?.IdleAudioConfig == null ||
+                    ModBehaviour.Instance.IdleAudioConfig.IsIdleAudioEnabled(Target))
+                    ScheduleNextIdleAudio();
+            }
         }
 
         private void InitializeCustomModelInternal(GameObject customModelPrefab, ModelInfo modelInfo)
@@ -546,7 +576,7 @@ namespace DuckovCustomModel.MonoBehaviours
             IdleAudioInterval interval;
             if (Target == ModelTarget.AICharacter)
             {
-                var nameKey = CharacterMainControl?.characterPreset?.nameKey;
+                var nameKey = NameKey;
                 interval = !string.IsNullOrEmpty(nameKey)
                     ? ModBehaviour.Instance.IdleAudioConfig.GetAICharacterIdleAudioInterval(nameKey)
                     : ModBehaviour.Instance.IdleAudioConfig.GetIdleAudioInterval(Target);

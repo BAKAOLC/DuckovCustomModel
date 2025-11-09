@@ -112,6 +112,13 @@ Idle audio automatic playback interval configuration. Used to configure automati
       "Min": 30.0,
       "Max": 45.0
     }
+  },
+  "EnableIdleAudio": {
+    "Character": false,
+    "Pet": true
+  },
+  "AICharacterEnableIdleAudio": {
+    "*": true
   }
 }
 ```
@@ -132,11 +139,24 @@ Idle audio automatic playback interval configuration. Used to configure automati
   - `Max`: Maximum interval time (default: `45.0`)
   - The system will randomly select an interval time between the minimum and maximum values
 
+- `EnableIdleAudio`: Dictionary type, where keys are `ModelTarget` enum values (e.g., `"Character"`, `"Pet"`), and values are boolean values that control whether the character type is allowed to automatically play idle audio
+  - `Character`: Whether player characters are allowed to automatically play idle audio (default: `false`)
+  - `Pet`: Whether pet characters are allowed to automatically play idle audio (default: `true`)
+  - When new `ModelTarget` types are added, the configuration will automatically include that type (default: `Character` is `false`, others are `true`)
+
+- `AICharacterEnableIdleAudio`: Dictionary type, where keys are AI character name keys (e.g., `"Cname_Wolf"`, `"Cname_Scav"`), and values are boolean values that control whether the AI character is allowed to automatically play idle audio
+  - Can configure whether each AI character is allowed to automatically play idle audio individually
+  - Special key `"*"`: Sets default value for all AI characters
+    - When an AI character doesn't have an individual configuration, the value corresponding to `"*"` will be used
+    - If `"*"` is also not configured, default value will be used (`true`)
+  - Default value: `true` (allowed to automatically play)
+
 **Notes**:
 - Minimum interval time cannot be less than 0.1 seconds
 - Maximum interval time cannot be less than minimum interval time
 - Only models with `"idle"` tagged sounds will automatically play idle sounds
-- Only non-player characters (AI characters and pets) will automatically play idle sounds, player characters will not
+- Only character types with automatic playback enabled will automatically play idle sounds (controlled by `EnableIdleAudio` and `AICharacterEnableIdleAudio` configurations)
+- Player characters are not allowed to automatically play idle sounds by default, but can be enabled through configuration
 
 ## Model Selection Interface
 
@@ -456,7 +476,7 @@ Sounds can be configured in `ModelInfo` within `bundleinfo.json`:
   - `"normal"`: Normal sound, used for player key press triggers and AI normal state
   - `"surprise"`: Surprise sound, used for AI surprise state
   - `"death"`: Death sound, used for AI death state
-  - `"idle"`: Idle sound, used for automatic playback by non-player characters (AI characters and pets)
+  - `"idle"`: Idle sound, used for automatic playback by characters (can be controlled through configuration to determine which character types are allowed to automatically play)
   - Can contain multiple tags, indicating the sound can be used in multiple scenarios
   - Defaults to `["normal"]` when no tags are specified
 
@@ -477,10 +497,12 @@ Sounds can be configured in `ModelInfo` within `bundleinfo.json`:
 - `"normal"`: Triggered during AI normal state
 - `"surprise"`: Triggered during AI surprise state
 - `"death"`: Triggered during AI death state
-- `"idle"`: Non-player characters (AI characters and pets) will automatically play idle sounds at random intervals
+- `"idle"`: Characters with automatic playback enabled will automatically play idle sounds at random intervals
   - Play interval can be configured in `IdleAudioConfig.json`
   - Default interval is 30-45 seconds (random)
   - Will not play when the character is dead
+  - Which character types are allowed to automatically play can be controlled through `EnableIdleAudio` and `AICharacterEnableIdleAudio` configurations
+  - By default, AI characters and pets are allowed to automatically play, while player characters are not (can be enabled through configuration)
 - If a sound with the specified tag doesn't exist, the original game event will be used (no fallback to other tags)
 
 ### Sound File Requirements

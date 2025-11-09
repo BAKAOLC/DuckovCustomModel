@@ -15,6 +15,8 @@ namespace DuckovCustomModel.Configs
     {
         public Dictionary<ModelTarget, IdleAudioInterval> IdleAudioIntervals { get; set; } = [];
         public Dictionary<string, IdleAudioInterval> AICharacterIdleAudioIntervals { get; set; } = [];
+        public Dictionary<ModelTarget, bool> EnableIdleAudio { get; set; } = [];
+        public Dictionary<string, bool> AICharacterEnableIdleAudio { get; set; } = [];
 
         public override void LoadDefault()
         {
@@ -26,6 +28,16 @@ namespace DuckovCustomModel.Configs
             }
 
             AICharacterIdleAudioIntervals = [];
+
+            EnableIdleAudio = [];
+            foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
+            {
+                if (target == ModelTarget.AICharacter) continue;
+                EnableIdleAudio[target] = target != ModelTarget.Character;
+            }
+
+            AICharacterEnableIdleAudio = [];
+            AICharacterEnableIdleAudio[AICharacters.AllAICharactersKey] = true;
         }
 
         public override bool Validate()
@@ -70,6 +82,19 @@ namespace DuckovCustomModel.Configs
                         modified = true;
                 }
 
+            EnableIdleAudio ??= [];
+            foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
+            {
+                if (target == ModelTarget.AICharacter) continue;
+                if (EnableIdleAudio.ContainsKey(target)) continue;
+                EnableIdleAudio[target] = target != ModelTarget.Character;
+                modified = true;
+            }
+
+            AICharacterEnableIdleAudio ??= [];
+            if (!AICharacterEnableIdleAudio.TryAdd(AICharacters.AllAICharactersKey, true)) return modified;
+            modified = true;
+
             return modified;
         }
 
@@ -78,6 +103,8 @@ namespace DuckovCustomModel.Configs
             if (other is not IdleAudioConfig otherConfig) return;
             IdleAudioIntervals = new(otherConfig.IdleAudioIntervals);
             AICharacterIdleAudioIntervals = new(otherConfig.AICharacterIdleAudioIntervals);
+            EnableIdleAudio = new(otherConfig.EnableIdleAudio);
+            AICharacterEnableIdleAudio = new(otherConfig.AICharacterEnableIdleAudio);
         }
 
         public IdleAudioInterval GetIdleAudioInterval(ModelTarget target)
@@ -106,6 +133,28 @@ namespace DuckovCustomModel.Configs
             if (min < 0.1f) min = 0.1f;
             if (max < min) max = min;
             AICharacterIdleAudioIntervals[nameKey] = new() { Min = min, Max = max };
+        }
+
+        public bool IsIdleAudioEnabled(ModelTarget target)
+        {
+            return EnableIdleAudio.TryGetValue(target, out var enabled) && enabled;
+        }
+
+        public void SetIdleAudioEnabled(ModelTarget target, bool enabled)
+        {
+            EnableIdleAudio[target] = enabled;
+        }
+
+        public bool IsAICharacterIdleAudioEnabled(string nameKey)
+        {
+            if (!string.IsNullOrEmpty(nameKey) && AICharacterEnableIdleAudio.TryGetValue(nameKey, out var enabled))
+                return enabled;
+            return AICharacterEnableIdleAudio.GetValueOrDefault(AICharacters.AllAICharactersKey, true);
+        }
+
+        public void SetAICharacterIdleAudioEnabled(string nameKey, bool enabled)
+        {
+            AICharacterEnableIdleAudio[nameKey] = enabled;
         }
     }
 }
