@@ -196,7 +196,7 @@ namespace DuckovCustomModel.UI.Base
             labelObj.transform.SetParent(dropdownObj.transform, false);
             var labelText = labelObj.GetComponent<Text>();
             labelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            labelText.fontSize = 14;
+            labelText.fontSize = 16;
             labelText.color = Color.white;
             labelText.alignment = TextAnchor.MiddleLeft;
             var labelRect = labelObj.GetComponent<RectTransform>();
@@ -250,7 +250,7 @@ namespace DuckovCustomModel.UI.Base
             contentRect.anchorMin = new(0, 1);
             contentRect.anchorMax = new(1, 1);
             contentRect.pivot = new(0.5f, 1);
-            contentRect.sizeDelta = new(0, 28);
+            contentRect.sizeDelta = new(0, 36);
             contentRect.anchoredPosition = Vector2.zero;
             templateScrollRect.content = contentRect;
 
@@ -260,41 +260,41 @@ namespace DuckovCustomModel.UI.Base
             itemRect.anchorMin = new(0, 1);
             itemRect.anchorMax = new(1, 1);
             itemRect.pivot = new(0.5f, 1);
-            itemRect.sizeDelta = new(0, 20);
+            itemRect.sizeDelta = new(0, 28);
             itemRect.anchoredPosition = Vector2.zero;
 
             var itemBackgroundObj = new GameObject("Item Background", typeof(Image));
             itemBackgroundObj.transform.SetParent(itemObj.transform, false);
             var itemBackgroundRect = itemBackgroundObj.GetComponent<RectTransform>();
-            itemBackgroundRect.anchorMin = Vector2.zero;
-            itemBackgroundRect.anchorMax = Vector2.one;
+            itemBackgroundRect.anchorMin = new(0, 0.1f);
+            itemBackgroundRect.anchorMax = new(1, 0.9f);
             itemBackgroundRect.sizeDelta = Vector2.zero;
             itemBackgroundRect.anchoredPosition = Vector2.zero;
             var itemBackgroundImage = itemBackgroundObj.GetComponent<Image>();
-            itemBackgroundImage.color = new(0.1f, 0.12f, 0.15f, 0.9f);
+            itemBackgroundImage.color = new(0.05f, 0.06f, 0.08f, 0.95f);
 
             var itemToggle = itemObj.GetComponent<Toggle>();
             itemToggle.targetGraphic = itemBackgroundImage;
 
             var colors = itemToggle.colors;
-            colors.normalColor = new(0.1f, 0.12f, 0.15f, 0.9f);
-            colors.highlightedColor = new(0.2f, 0.25f, 0.3f, 0.9f);
-            colors.pressedColor = new(0.15f, 0.18f, 0.22f, 0.9f);
-            colors.selectedColor = new(0.2f, 0.25f, 0.3f, 0.9f);
-            colors.disabledColor = new(0.1f, 0.12f, 0.15f, 0.5f);
+            colors.normalColor = new(0.05f, 0.06f, 0.08f, 0.95f);
+            colors.highlightedColor = new(0.15f, 0.18f, 0.22f, 0.95f);
+            colors.pressedColor = new(0.1f, 0.12f, 0.15f, 0.95f);
+            colors.selectedColor = new(0.15f, 0.18f, 0.22f, 0.95f);
+            colors.disabledColor = new(0.05f, 0.06f, 0.08f, 0.5f);
             itemToggle.colors = colors;
 
             var itemLabelObj = new GameObject("Item Label", typeof(Text));
             itemLabelObj.transform.SetParent(itemObj.transform, false);
             var itemLabelText = itemLabelObj.GetComponent<Text>();
             itemLabelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            itemLabelText.fontSize = 14;
+            itemLabelText.fontSize = 16;
             itemLabelText.color = Color.white;
             itemLabelText.alignment = TextAnchor.MiddleLeft;
             var itemLabelRect = itemLabelObj.GetComponent<RectTransform>();
             itemLabelRect.anchorMin = new(0, 0);
             itemLabelRect.anchorMax = new(1, 1);
-            itemLabelRect.offsetMin = new(10, 1);
+            itemLabelRect.offsetMin = new(10, 2);
             itemLabelRect.offsetMax = new(-10, -2);
 
             dropdown.template = templateRect;

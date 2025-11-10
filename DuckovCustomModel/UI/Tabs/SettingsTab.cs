@@ -208,7 +208,7 @@ namespace DuckovCustomModel.UI.Tabs
             _showDCMButtonToggle = toggle;
         }
 
-        private void OnShowDCMButtonToggleChanged(bool value)
+        private static void OnShowDCMButtonToggleChanged(bool value)
         {
             if (UIConfig == null) return;
             UIConfig.ShowDCMButton = value;
@@ -300,7 +300,7 @@ namespace DuckovCustomModel.UI.Tabs
             RefreshDCMButtonPositionDisplay();
         }
 
-        private void RefreshAnchorDropdownOptions(Dropdown dropdown)
+        private static void RefreshAnchorDropdownOptions(Dropdown dropdown)
         {
             dropdown.options.Clear();
             dropdown.options.Add(new(GetAnchorPositionText(AnchorPosition.TopLeft)));
