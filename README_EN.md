@@ -206,10 +206,11 @@ The model selection interface provides the following features:
 - Default key: `\` (backslash key)
 - Can be changed by modifying `ToggleKey` in `UIConfig.json`
 - Press `ESC` key to close the interface
-- **DCM Button**: When in the main menu or inventory interface, a fixed DCM button will appear in the top-left corner of the screen
+- **DCM Button**: When in the main menu or inventory interface, a fixed DCM button will appear on the screen (default position: top-left)
   - Click the button to quickly open/close the model selection interface
   - Button position and visibility can be configured in the settings interface
   - Button position supports 9 anchor positions (top-left, top-center, top-right, middle-left, middle-center, middle-right, bottom-left, bottom-center, bottom-right) and custom offset values
+  - Configuration changes will be immediately applied to the button position without restarting the game
 
 ## Model Installation
 
