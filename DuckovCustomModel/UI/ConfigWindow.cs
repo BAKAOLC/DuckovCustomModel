@@ -428,11 +428,11 @@ namespace DuckovCustomModel.UI
 
             InitializeParamStyles();
 
-            GUILayout.BeginArea(new(10, 30, AnimatorParamsWindowWidth - 20, AnimatorParamsWindowHeight - 20));
+            GUILayout.BeginArea(new(10, 30, AnimatorParamsWindowWidth - 20, AnimatorParamsWindowHeight - 40));
 
             _animatorParamsScrollPosition = GUILayout.BeginScrollView(_animatorParamsScrollPosition,
                 _scrollViewStyle, GUILayout.Width(AnimatorParamsWindowWidth - 20),
-                GUILayout.Height(AnimatorParamsWindowHeight - 20));
+                GUILayout.Height(AnimatorParamsWindowHeight - 40));
 
             var paramInfos = GetCustomAnimatorParams();
             for (var i = 0; i < paramInfos.Count; i += 2)
@@ -557,7 +557,6 @@ namespace DuckovCustomModel.UI
                     "float" => customAnimatorControl.GetParameterFloat(paramInfo.Hash),
                     "int" => customAnimatorControl.GetParameterInteger(paramInfo.Hash),
                     "bool" => customAnimatorControl.GetParameterBool(paramInfo.Hash),
-                    "trigger" => null,
                     _ => null,
                 };
             }
@@ -571,14 +570,13 @@ namespace DuckovCustomModel.UI
         {
             if (currentValue == null || paramType == "trigger") return;
 
-            if (!_paramPreviousValues.ContainsKey(hash))
+            if (!_paramPreviousValues.TryGetValue(hash, out var previousValue))
             {
                 _paramPreviousValues[hash] = currentValue;
                 _paramIsChanging[hash] = false;
                 return;
             }
 
-            var previousValue = _paramPreviousValues[hash];
             var isValueChanged = !ValuesEqual(currentValue, previousValue, paramType);
             _paramIsChanging[hash] = isValueChanged;
             _paramPreviousValues[hash] = currentValue;
