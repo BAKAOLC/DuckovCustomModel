@@ -384,7 +384,7 @@ namespace DuckovCustomModel.MonoBehaviours
             // Instantiate the custom model prefab
             CustomModelInstance = Instantiate(customModelPrefab, OriginalCharacterModel.transform);
             CustomModelInstance.name = "CustomModelInstance";
-            CustomModelInstance.layer = LayerMask.NameToLayer("Default");
+            CustomModelInstance.layer = LayerMask.NameToLayer("Character");
 
             if (modelInfo.Features is not { Length: > 0 } || !Array.Exists(modelInfo.Features,
                     feature => feature == ModelFeatures.NoAutoShaderReplace)) ReplaceShader(CustomModelInstance);
