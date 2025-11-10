@@ -2,6 +2,12 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.7.1
+
+- Modified animator parameter update logic to allow viewing animator parameter updates even when not using custom models (parameters are not applied to the animator)
+- Changed CustomAnimatorControl to a persistent instance attached to the same object as ModelHandler, only changing the target Animator, avoiding frequent component creation and destruction
+- Fixed issue where animator parameter window would not display when not using custom models
+
 ## v1.7.0
 
 - Added a fixed settings button in the top-left corner of the screen that can be clicked to open/close the settings interface
