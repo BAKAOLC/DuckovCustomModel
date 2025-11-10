@@ -2,6 +2,16 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.7.2
+
+- Added InitialValue property to AnimatorParamInfo for storing parameter initial values
+- Fixed initial value of ShootMode parameter (changed from 0 to -1)
+- Enhanced animator parameter window display with parameter value change detection and color highlighting
+  - Changed parameter values are displayed in yellow
+  - Currently changing parameter values are displayed in orange
+  - Unchanged parameters are displayed in white
+- Adjusted animator parameter window height (increased from 800 to 1000) and font size (increased from 13 to 16)
+
 ## v1.7.1
 
 - Modified animator parameter update logic to allow viewing animator parameter updates even when not using custom models (parameters are not applied to the animator)

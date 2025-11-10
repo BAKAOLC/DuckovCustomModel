@@ -411,7 +411,7 @@ namespace DuckovCustomModel.MonoBehaviours
             var isGunReady = false;
             var isReloading = false;
             var ammoRate = 0.0f;
-            var shootMode = 0;
+            var shootMode = -1;
             var gunState = -1;
             if (_gunAgent != null)
             {

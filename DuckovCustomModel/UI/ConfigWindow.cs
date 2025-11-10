@@ -21,9 +21,11 @@ namespace DuckovCustomModel.UI
     public class ConfigWindow : MonoBehaviour
     {
         private const float AnimatorParamsWindowWidth = 700f;
-        private const float AnimatorParamsWindowHeight = 800f;
+        private const float AnimatorParamsWindowHeight = 1000f;
+        private readonly Dictionary<int, bool> _paramIsChanging = new();
+        private readonly Dictionary<int, object> _paramPreviousValues = new();
         private Vector2 _animatorParamsScrollPosition;
-        private Rect _animatorParamsWindowRect = new(10, 10, 600, 800);
+        private Rect _animatorParamsWindowRect = new(10, 10, 600, 1000);
 
         private CharacterInputControl? _charInput;
         private bool _charInputWasEnabled;
@@ -39,6 +41,8 @@ namespace DuckovCustomModel.UI
         private GameObject? _overlay;
         private GameObject? _panelRoot;
         private GUIStyle? _paramLabelStyle;
+        private GUIStyle? _paramLabelStyleChanged;
+        private GUIStyle? _paramLabelStyleChanging;
         private ModelHandler? _petModelHandler;
         private PlayerInput? _playerInput;
         private bool _playerInputWasActive;
@@ -438,26 +442,26 @@ namespace DuckovCustomModel.UI
                 var paramInfo1 = paramInfos[i];
                 var paramName1 = $"{paramInfo1.Name} ({paramInfo1.Type})";
                 var paramValue1 = GetParameterValue(customAnimatorControl, paramInfo1);
+                var paramValueObj1 = GetParameterValueObject(customAnimatorControl, paramInfo1);
+                var style1 = GetParamStyle(paramInfo1, paramValueObj1);
 
-                if (_paramLabelStyle != null)
-                    GUILayout.Label($"{paramName1}: {paramValue1}", _paramLabelStyle,
-                        GUILayout.Width((AnimatorParamsWindowWidth - 40) / 2f));
-                else
-                    GUILayout.Label($"{paramName1}: {paramValue1}",
-                        GUILayout.Width((AnimatorParamsWindowWidth - 40) / 2f));
+                GUILayout.Label($"{paramName1}: {paramValue1}", style1,
+                    GUILayout.Width((AnimatorParamsWindowWidth - 40) / 2f));
+
+                UpdateParamState(paramInfo1.Hash, paramValueObj1, paramInfo1.Type);
 
                 if (i + 1 < paramInfos.Count)
                 {
                     var paramInfo2 = paramInfos[i + 1];
                     var paramName2 = $"{paramInfo2.Name} ({paramInfo2.Type})";
                     var paramValue2 = GetParameterValue(customAnimatorControl, paramInfo2);
+                    var paramValueObj2 = GetParameterValueObject(customAnimatorControl, paramInfo2);
+                    var style2 = GetParamStyle(paramInfo2, paramValueObj2);
 
-                    if (_paramLabelStyle != null)
-                        GUILayout.Label($"{paramName2}: {paramValue2}", _paramLabelStyle,
-                            GUILayout.Width((AnimatorParamsWindowWidth - 40) / 2f));
-                    else
-                        GUILayout.Label($"{paramName2}: {paramValue2}",
-                            GUILayout.Width((AnimatorParamsWindowWidth - 40) / 2f));
+                    GUILayout.Label($"{paramName2}: {paramValue2}", style2,
+                        GUILayout.Width((AnimatorParamsWindowWidth - 40) / 2f));
+
+                    UpdateParamState(paramInfo2.Hash, paramValueObj2, paramInfo2.Type);
                 }
 
                 GUILayout.EndHorizontal();
@@ -480,8 +484,20 @@ namespace DuckovCustomModel.UI
         {
             _paramLabelStyle ??= new(GUI.skin.label)
             {
-                fontSize = 13,
+                fontSize = 16,
                 normal = { textColor = Color.white },
+            };
+
+            _paramLabelStyleChanged ??= new(GUI.skin.label)
+            {
+                fontSize = 16,
+                normal = { textColor = new(1f, 0.8f, 0.2f, 1f) },
+            };
+
+            _paramLabelStyleChanging ??= new(GUI.skin.label)
+            {
+                fontSize = 16,
+                normal = { textColor = new(1f, 0.4f, 0.1f, 1f) },
             };
 
             _scrollViewStyle ??= new(GUI.skin.scrollView)
@@ -527,6 +543,76 @@ namespace DuckovCustomModel.UI
             {
                 return "N/A";
             }
+        }
+
+        private static object? GetParameterValueObject(CustomAnimatorControl customAnimatorControl,
+            AnimatorParamInfo paramInfo)
+        {
+            if (customAnimatorControl == null) return null;
+
+            try
+            {
+                return paramInfo.Type switch
+                {
+                    "float" => customAnimatorControl.GetParameterFloat(paramInfo.Hash),
+                    "int" => customAnimatorControl.GetParameterInteger(paramInfo.Hash),
+                    "bool" => customAnimatorControl.GetParameterBool(paramInfo.Hash),
+                    "trigger" => null,
+                    _ => null,
+                };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void UpdateParamState(int hash, object? currentValue, string paramType)
+        {
+            if (currentValue == null || paramType == "trigger") return;
+
+            if (!_paramPreviousValues.ContainsKey(hash))
+            {
+                _paramPreviousValues[hash] = currentValue;
+                _paramIsChanging[hash] = false;
+                return;
+            }
+
+            var previousValue = _paramPreviousValues[hash];
+            var isValueChanged = !ValuesEqual(currentValue, previousValue, paramType);
+            _paramIsChanging[hash] = isValueChanged;
+            _paramPreviousValues[hash] = currentValue;
+        }
+
+        private static bool ValuesEqual(object? value1, object? value2, string paramType)
+        {
+            if (value1 == null && value2 == null) return true;
+            if (value1 == null || value2 == null) return false;
+
+            return paramType switch
+            {
+                "float" => Math.Abs((float)value1 - (float)value2) < 0.0001f,
+                "int" => (int)value1 == (int)value2,
+                "bool" => (bool)value1 == (bool)value2,
+                _ => value1.Equals(value2),
+            };
+        }
+
+        private GUIStyle GetParamStyle(AnimatorParamInfo paramInfo, object? currentValue)
+        {
+            if (currentValue == null || paramInfo.InitialValue == null)
+                return _paramLabelStyle ?? GUI.skin.label;
+
+            var isChanged = !ValuesEqual(currentValue, paramInfo.InitialValue, paramInfo.Type);
+            var isChanging = _paramIsChanging.GetValueOrDefault(paramInfo.Hash, false);
+
+            if (isChanging)
+                return _paramLabelStyleChanging ?? _paramLabelStyle ?? GUI.skin.label;
+
+            if (isChanged)
+                return _paramLabelStyleChanged ?? _paramLabelStyle ?? GUI.skin.label;
+
+            return _paramLabelStyle ?? GUI.skin.label;
         }
 
         private void UpdateModelHandlers()
