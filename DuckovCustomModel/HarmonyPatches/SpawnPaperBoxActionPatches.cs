@@ -18,6 +18,9 @@ namespace DuckovCustomModel.HarmonyPatches
             var instance = InstanceField.GetValue(__instance) as PaperBox;
             if (instance == null) return;
 
+            var targetCharacter = instance.character;
+            if (targetCharacter == null) return;
+
             var customSocketMarker = instance.GetComponent<CustomSocketMarker>();
             if (customSocketMarker == null)
             {
@@ -29,7 +32,7 @@ namespace DuckovCustomModel.HarmonyPatches
             var dontHideAsEquipment = instance.GetComponent<DontHideAsEquipment>();
             if (dontHideAsEquipment == null) instance.gameObject.AddComponent<DontHideAsEquipment>();
 
-            var modelHandler = instance.GetComponent<ModelHandler>();
+            var modelHandler = targetCharacter.GetComponent<ModelHandler>();
             if (modelHandler == null || !modelHandler.IsInitialized) return;
 
             modelHandler.RegisterCustomSocketObject(instance.gameObject);
@@ -43,7 +46,10 @@ namespace DuckovCustomModel.HarmonyPatches
             var instance = InstanceField.GetValue(__instance) as PaperBox;
             if (instance == null) return;
 
-            var modelHandler = instance.GetComponent<ModelHandler>();
+            var targetCharacter = instance.character;
+            if (targetCharacter == null) return;
+
+            var modelHandler = targetCharacter.GetComponent<ModelHandler>();
             if (modelHandler == null || !modelHandler.IsInitialized) return;
 
             modelHandler.UnregisterCustomSocketObject(instance.gameObject);

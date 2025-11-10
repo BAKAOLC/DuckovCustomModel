@@ -11,10 +11,14 @@ namespace DuckovCustomModel.HarmonyPatches
         [HarmonyPatch(typeof(Carriable), nameof(Carriable.Take))]
         [HarmonyPostfix]
         // ReSharper disable InconsistentNaming
-        private static void Carriable_Take_Postfix(Rigidbody ___rb)
+        private static void Carriable_Take_Postfix(Rigidbody ___rb, CA_Carry _carrier)
             // ReSharper restore InconsistentNaming
         {
-            if (___rb == null)
+            if (___rb == null || _carrier == null)
+                return;
+
+            var targetCharacter = _carrier.characterController;
+            if (targetCharacter == null)
                 return;
 
             var customSocketMarker = ___rb.GetComponent<CustomSocketMarker>();
@@ -32,7 +36,7 @@ namespace DuckovCustomModel.HarmonyPatches
             if (dontHideAsEquipment == null)
                 ___rb.gameObject.AddComponent<DontHideAsEquipment>();
 
-            var modelHandler = ___rb.GetComponent<ModelHandler>();
+            var modelHandler = targetCharacter.GetComponent<ModelHandler>();
             if (modelHandler == null || !modelHandler.IsInitialized)
                 return;
             modelHandler.RegisterCustomSocketObject(___rb.gameObject);
@@ -41,13 +45,17 @@ namespace DuckovCustomModel.HarmonyPatches
         [HarmonyPatch(typeof(Carriable), nameof(Carriable.Drop))]
         [HarmonyPostfix]
         // ReSharper disable InconsistentNaming
-        private static void Carriable_Drop_Postfix(Rigidbody ___rb)
+        private static void Carriable_Drop_Postfix(Rigidbody ___rb, CA_Carry ___carrier)
             // ReSharper restore InconsistentNaming
         {
-            if (___rb == null)
+            if (___rb == null || ___carrier == null)
                 return;
 
-            var modelHandler = ___rb.GetComponent<ModelHandler>();
+            var targetCharacter = ___carrier.characterController;
+            if (targetCharacter == null)
+                return;
+
+            var modelHandler = targetCharacter.GetComponent<ModelHandler>();
             if (modelHandler == null || !modelHandler.IsInitialized)
                 return;
 
