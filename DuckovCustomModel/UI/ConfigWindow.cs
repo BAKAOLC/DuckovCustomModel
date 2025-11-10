@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Duckov.UI;
 using DuckovCustomModel.Configs;
 using DuckovCustomModel.Data;
 using DuckovCustomModel.Localizations;
@@ -11,6 +12,7 @@ using DuckovCustomModel.UI.Tabs;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace DuckovCustomModel.UI
@@ -36,6 +38,7 @@ namespace DuckovCustomModel.UI
         private PlayerInput? _playerInput;
         private bool _playerInputWasActive;
         private GUIStyle? _scrollViewStyle;
+        private GameObject? _settingsButton;
         private SettingsTab? _settingsTab;
         private bool _showAnimatorParamsWindow;
         private TabSystem? _tabSystem;
@@ -57,6 +60,8 @@ namespace DuckovCustomModel.UI
                 InitializeUI();
                 return;
             }
+
+            UpdateSettingsButtonVisibility();
 
             if (IsTypingInInputField() || _panelRoot == null) return;
 
@@ -120,6 +125,7 @@ namespace DuckovCustomModel.UI
             CreateOrFindUiRoot();
             BuildMainPanel();
             SetupPanels();
+            BuildSettingsButton();
 
             _uiActive = false;
             if (_overlay != null) _overlay.SetActive(false);
@@ -529,6 +535,79 @@ namespace DuckovCustomModel.UI
         public bool IsAnimatorParamsWindowVisible()
         {
             return _showAnimatorParamsWindow;
+        }
+
+        private void BuildSettingsButton()
+        {
+            if (_uiRoot == null) return;
+
+            _settingsButton = UIFactory.CreateButton("SettingsButton", _uiRoot.transform, OnSettingsButtonClicked,
+                new Color(0.2f, 0.25f, 0.3f, 0.9f));
+            var buttonRect = _settingsButton.GetComponent<RectTransform>();
+            buttonRect.anchorMin = new(0, 1);
+            buttonRect.anchorMax = new(0, 1);
+            buttonRect.pivot = new(0, 1);
+            buttonRect.sizeDelta = new(80, 50);
+            buttonRect.anchoredPosition = new(10, -10);
+
+            var outline = _settingsButton.AddComponent<Outline>();
+            outline.effectColor = new(0.3f, 0.35f, 0.4f, 0.7f);
+            outline.effectDistance = new(1, -1);
+
+            var buttonText = UIFactory.CreateText("Text", _settingsButton.transform, "DCM", 24, Color.white,
+                TextAnchor.MiddleCenter);
+            UIFactory.SetupRectTransform(buttonText, Vector2.zero, Vector2.one, Vector2.zero);
+
+            UIFactory.SetupButtonColors(_settingsButton.GetComponent<Button>(),
+                new(0.2f, 0.25f, 0.3f, 0.9f),
+                new(0.3f, 0.35f, 0.4f, 0.9f),
+                new(0.15f, 0.2f, 0.25f, 0.9f));
+
+            SetSettingsButtonVisible(false);
+        }
+
+        private void OnSettingsButtonClicked()
+        {
+            if (!_isInitialized)
+            {
+                ModLogger.LogWarning("Cannot toggle panel - not initialized!");
+                return;
+            }
+
+            if (_panelRoot == null)
+            {
+                ModLogger.LogWarning("Cannot toggle panel - panel root is null!");
+                return;
+            }
+
+            if (_panelRoot.activeSelf)
+                HidePanel();
+            else
+                ShowPanel();
+        }
+
+        private void SetSettingsButtonVisible(bool visible)
+        {
+            if (_settingsButton != null) _settingsButton.SetActive(visible);
+        }
+
+        private void UpdateSettingsButtonVisibility()
+        {
+            var shouldShow = IsInMainMenu() || IsInLootView();
+            SetSettingsButtonVisible(shouldShow);
+        }
+
+        private bool IsInMainMenu()
+        {
+            var currentScene = SceneManager.GetActiveScene();
+            return currentScene.name == "MainMenu";
+        }
+
+        private bool IsInLootView()
+        {
+            var activeView = View.ActiveView;
+            var lootView = LootView.Instance;
+            return activeView != null && lootView != null && activeView == lootView;
         }
     }
 }

@@ -2,6 +2,11 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.7.0
+
+- Added a fixed settings button in the top-left corner of the screen that can be clicked to open/close the settings interface
+- The settings button automatically appears when in the main menu or inventory interface
+
 ## v1.6.8
 
 - Now automatically sets the layer of objects containing Renderer in the model to "Character"
