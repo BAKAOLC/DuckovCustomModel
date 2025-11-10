@@ -124,9 +124,6 @@ namespace DuckovCustomModel.UI
             var customAnimatorControl = currentHandler.CustomAnimatorControl;
             if (customAnimatorControl == null) return;
 
-            var animator = currentHandler.CustomAnimator;
-            if (animator == null) return;
-
             _animatorParamsWindowRect.width = AnimatorParamsWindowWidth;
             _animatorParamsWindowRect.height = AnimatorParamsWindowHeight;
             _animatorParamsWindowRect = GUI.Window(100, _animatorParamsWindowRect, DrawAnimatorParamsWindow,
