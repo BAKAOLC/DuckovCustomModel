@@ -2,6 +2,10 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.6.5
+
+- Fixed the working logic of paper box locator and carriable locator
+
 ## v1.6.4
 
 - Added `WeaponInLocator` Animator parameter to indicate the current locator type where the weapon is placed (left hand, right hand, or melee weapon)

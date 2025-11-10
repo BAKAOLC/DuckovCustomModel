@@ -2,6 +2,10 @@
 
 [English](CHANGELOG_EN.md) | 中文
 
+## v1.6.5
+
+- 修复了 纸箱定位点 和 搬运定位点 的工作逻辑
+
 ## v1.6.4
 
 - 新增 `WeaponInLocator` Animator 参数，用于指示武器当前所在的定位点类型（左手、右手或近战武器）
