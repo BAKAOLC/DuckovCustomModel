@@ -73,7 +73,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void Update()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null)
+            if (_characterMainControl == null)
                 return;
 
             UpdateDeadState();
@@ -115,6 +115,13 @@ namespace DuckovCustomModel.MonoBehaviours
             _initialized = true;
 
             OnHoldAgentChanged(_characterMainControl.CurrentHoldItemAgent);
+        }
+
+        public void SetCustomAnimator(Animator? animator)
+        {
+            _customAnimator = animator;
+            _attackLayerIndex = -1;
+            if (_customAnimator != null) FindMeleeAttackLayerIndex();
         }
 
         private void SetAnimatorFloat(int hash, float value)
@@ -162,7 +169,7 @@ namespace DuckovCustomModel.MonoBehaviours
         public void UpdateDeadState()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null)
+            if (_characterMainControl == null)
                 return;
 
             if (_characterMainControl.Health == null)
@@ -175,7 +182,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateMovement()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null)
+            if (_characterMainControl == null)
                 return;
 
             SetAnimatorFloat(CustomAnimatorHash.MoveSpeed, _characterMainControl.AnimationMoveSpeedValue);
@@ -199,7 +206,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateCharacterType()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _modelHandler == null)
+            if (_modelHandler == null)
                 return;
 
             var characterType = (int)_modelHandler.Target;
@@ -209,7 +216,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateVelocityAndAim()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null)
+            if (_characterMainControl == null)
                 return;
 
             var velocity = _characterMainControl.Velocity;
@@ -236,7 +243,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateCharacterStatus()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null)
+            if (_characterMainControl == null)
                 return;
 
             var hidden = _characterMainControl.Hidden;
@@ -290,7 +297,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateEquipmentState()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null || _characterModel == null)
+            if (_characterMainControl == null || _characterModel == null)
                 return;
 
             var thermalOn = _characterMainControl.ThermalOn;
@@ -323,7 +330,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateEquipmentTypeID()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null || _characterModel == null)
+            if (_characterMainControl == null || _characterModel == null)
                 return;
 
             #region Armor/Helmet/Face/Backpack/Headset
@@ -362,7 +369,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateHandState()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null)
+            if (_characterMainControl == null)
                 return;
 
             var handState = 0;
@@ -385,7 +392,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateGunState()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null)
+            if (_characterMainControl == null)
                 return;
 
             if (_holdAgent != null && _gunAgent == null)
@@ -440,7 +447,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateActionState()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null)
+            if (_characterMainControl == null)
                 return;
 
             var currentAction = _characterMainControl.CurrentAction;
@@ -501,7 +508,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private void UpdateHandParams()
         {
             if (!_initialized) return;
-            if (_customAnimator == null || _characterMainControl == null || _characterModel == null)
+            if (_characterMainControl == null || _characterModel == null)
                 return;
 
             var leftHandTypeID = 0;

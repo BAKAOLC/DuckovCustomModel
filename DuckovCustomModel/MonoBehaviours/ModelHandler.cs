@@ -157,6 +157,13 @@ namespace DuckovCustomModel.MonoBehaviours
             if (OriginalAnimationControl == null && OriginalMagicBlendAnimationControl == null)
                 ModLogger.LogError("No CharacterAnimationControl component found on CharacterModel.");
 
+            var customAnimatorControl = CharacterMainControl.GetComponent<CustomAnimatorControl>();
+            if (customAnimatorControl == null)
+                customAnimatorControl = CharacterMainControl.gameObject.AddComponent<CustomAnimatorControl>();
+
+            CustomAnimatorControl = customAnimatorControl;
+            customAnimatorControl.Initialize(this);
+
             RecordOriginalModelSockets();
             ModLogger.Log("ModelHandler initialized successfully.");
             IsInitialized = true;
@@ -258,17 +265,14 @@ namespace DuckovCustomModel.MonoBehaviours
 
             if (CustomModelInstance != null)
             {
-                if (CustomAnimatorControl != null)
-                {
-                    DestroyImmediate(CustomAnimatorControl);
-                    CustomAnimatorControl = null;
-                }
-
                 CustomAnimator = null;
 
                 DestroyImmediate(CustomModelInstance);
                 CustomModelInstance = null;
             }
+
+            if (CustomAnimatorControl != null)
+                CustomAnimatorControl.SetCustomAnimator(null);
 
             if (_deathLootBoxPrefab != null)
             {
@@ -391,15 +395,16 @@ namespace DuckovCustomModel.MonoBehaviours
 
             // Get the Animator component from the custom model
             CustomAnimator = CustomModelInstance.GetComponent<Animator>();
-            if (CustomAnimator != null)
-            {
-                CustomAnimatorControl = CustomModelInstance.AddComponent<CustomAnimatorControl>();
-                CustomAnimatorControl.Initialize(this);
-            }
-            else
-            {
-                ModLogger.LogError("Custom model prefab does not have an Animator component.");
-            }
+            if (CustomAnimatorControl != null)
+                if (CustomAnimator != null)
+                {
+                    CustomAnimatorControl.SetCustomAnimator(CustomAnimator);
+                }
+                else
+                {
+                    ModLogger.LogError("No Animator component found on custom model instance.");
+                    CustomAnimatorControl.SetCustomAnimator(null);
+                }
 
             RecordCustomModelSockets();
 
