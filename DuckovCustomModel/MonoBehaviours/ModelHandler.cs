@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -27,9 +26,15 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private readonly Dictionary<string, List<string>> _soundsByTag = [];
         private readonly HashSet<GameObject> _usingCustomSocketObjects = [];
+
+        private ModelBundleInfo? _currentModelBundleInfo;
+        private ModelInfo? _currentModelInfo;
         private GameObject? _deathLootBoxPrefab;
 
         private float _nextIdleAudioTime;
+
+        private bool ReplaceShader => _currentModelInfo is not { Features: { Length: > 0 } }
+                                      || !_currentModelInfo.Features.Contains(ModelFeatures.NoAutoShaderReplace);
 
         public CharacterMainControl? CharacterMainControl { get; private set; }
         public CharacterModel? OriginalCharacterModel { get; private set; }
@@ -184,7 +189,13 @@ namespace DuckovCustomModel.MonoBehaviours
             if (_deathLootBoxPrefab == null) return null;
             var instance = Instantiate(_deathLootBoxPrefab);
             instance.name = "DeathLootBox_CustomModel";
-            ReplaceShaderAndLayer(instance);
+
+            var renderers = GetAllRenderers(instance);
+            ReplaceRenderersLayer(renderers);
+
+            if (ReplaceShader)
+                ReplaceRenderersShader(renderers);
+
             return instance;
         }
 
@@ -335,6 +346,8 @@ namespace DuckovCustomModel.MonoBehaviours
             }
 
             if (CustomModelInstance != null) CleanupCustomModel();
+            _currentModelBundleInfo = modelBundleInfo;
+            _currentModelInfo = modelInfo;
             InitSoundFilePath(modelBundleInfo, modelInfo);
             InitializeDeathLootBoxPrefab(modelBundleInfo, modelInfo);
             InitializeCustomModelInternal(prefab, modelInfo);
@@ -389,9 +402,10 @@ namespace DuckovCustomModel.MonoBehaviours
             CustomModelInstance = Instantiate(customModelPrefab, OriginalCharacterModel.transform);
             CustomModelInstance.name = "CustomModelInstance";
 
-            if (modelInfo.Features is not { Length: > 0 } || !Array.Exists(modelInfo.Features,
-                    feature => feature == ModelFeatures.NoAutoShaderReplace))
-                ReplaceShaderAndLayer(CustomModelInstance);
+            var renderers = GetAllRenderers(CustomModelInstance);
+            ReplaceRenderersLayer(renderers);
+            if (ReplaceShader)
+                ReplaceRenderersShader(renderers);
 
             // Get the Animator component from the custom model
             CustomAnimator = CustomModelInstance.GetComponent<Animator>();
@@ -542,15 +556,13 @@ namespace DuckovCustomModel.MonoBehaviours
             return transforms.FirstOrDefault(t => t.name == locatorName);
         }
 
-        private static void ReplaceShaderAndLayer(GameObject targetGameObject, string layerName = "Character")
+        private static Renderer[] GetAllRenderers(GameObject targetGameObject)
         {
-            var shader = GameDefaultShader;
-            if (shader == null)
-            {
-                ModLogger.LogError("Game default shader not found.");
-                return;
-            }
+            return targetGameObject.GetComponentsInChildren<Renderer>(true);
+        }
 
+        private static void ReplaceRenderersLayer(Renderer[] renderers, string layerName = "Character")
+        {
             var layer = LayerMask.NameToLayer(layerName);
             if (layer == -1)
             {
@@ -558,19 +570,32 @@ namespace DuckovCustomModel.MonoBehaviours
                 return;
             }
 
-            var renderers = targetGameObject.GetComponentsInChildren<Renderer>(true);
             foreach (var renderer in renderers)
             {
                 var gameObject = renderer.gameObject;
                 if (gameObject.layer != layer)
                     gameObject.layer = layer;
-                foreach (var material in renderer.materials)
-                {
-                    if (material == null) continue;
-                    material.shader = shader;
-                    if (material.HasProperty(EmissionColor))
-                        material.SetColor(EmissionColor, Color.black);
-                }
+            }
+        }
+
+        private static void ReplaceRenderersShader(Renderer[] renderers, string? shaderName = null)
+        {
+            var shader = shaderName != null ? Shader.Find(shaderName) : GameDefaultShader;
+            if (shader == null)
+            {
+                ModLogger.LogError(shaderName != null
+                    ? $"Shader '{shaderName}' not found."
+                    : "Game default shader not found.");
+                return;
+            }
+
+            foreach (var renderer in renderers)
+            foreach (var material in renderer.materials)
+            {
+                if (material == null) continue;
+                material.shader = shader;
+                if (material.HasProperty(EmissionColor))
+                    material.SetColor(EmissionColor, Color.black);
             }
         }
 
