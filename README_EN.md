@@ -688,7 +688,7 @@ The keys for AI unit targets (such as `"Cname_Wolf"`, `"Cname_Scav"`) can be fou
 
 1. Open the model selection interface (default key: `\`)
 2. Select "AI Character" from the target type dropdown menu
-3. Select the AI character to configure (or select "All AI Characters" to set the default model)
+3. Select the AI character to configure (or select "All AI Characters" to set default configuration items)
 4. Browse and select the model to apply
 5. Configuration will be automatically saved to `UsingModel.json`
 
@@ -697,9 +697,10 @@ The keys for AI unit targets (such as `"Cname_Wolf"`, `"Cname_Scav"`) can be fou
 You can configure whether to hide original equipment for each AI character individually:
 
 - In the model selection interface, select "AI Character" target type
-- Select a specific AI character
-- A "Hide Equipment" toggle option for that AI character will be displayed at the top of the model list page
-- Each AI character has an independent hide equipment setting
+- Select a specific AI character (or select "All AI Characters" to set the default value)
+- A "Hide Equipment" toggle option for that AI character will be displayed in the target settings area
+- Each AI character has an independent hide equipment setting, and you can also set a default value for "All AI Characters"
+- When an AI character does not have an individual configuration, it will use the default value for "All AI Characters"
 - Configuration will be automatically saved to `HideEquipmentConfig.json`
 
 ### Notes

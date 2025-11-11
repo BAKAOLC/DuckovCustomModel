@@ -2,6 +2,15 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.7.7
+
+- Added "All AI Characters" target settings feature for uniformly setting default configuration items for all AI characters
+- Optimized model lookup logic: prioritize individual settings, if not found then look for `*` settings, finally use original model
+- Optimized some collision detection calculation logic when using custom models
+- Fixed issue where headshot detection could not be triggered when character equipment was hidden
+- Fixed issue where some slots would become invisible when switching models
+- Fixed fallback logic for AI character configurations; audio, equipment hiding, and other settings now correctly fall back to `*` configuration
+
 ## v1.7.6
 
 - Fixed the logic for obtaining the original model of character units; should now correctly match and process the original models for various character types
