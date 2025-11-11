@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using DuckovCustomModel.Localizations;
 using DuckovCustomModel.Managers;
 using DuckovCustomModel.UI.Base;
@@ -10,6 +12,8 @@ namespace DuckovCustomModel.UI.Components
     public class FunctionButtonBar : MonoBehaviour
     {
         private bool _isRefreshing;
+        private Button? _openModelFolderButton;
+        private Text? _openModelFolderButtonText;
         private Button? _refreshButton;
         private Text? _refreshButtonText;
         private Button? _resetInvalidModelsButton;
@@ -46,6 +50,7 @@ namespace DuckovCustomModel.UI.Components
 
             BuildRefreshButton(buttonBar);
             BuildResetInvalidModelsButton(buttonBar);
+            BuildOpenModelFolderButton(buttonBar);
 
             ModelListManager.OnRefreshStarted += OnModelListRefreshStarted;
             ModelListManager.OnRefreshCompleted += OnModelListRefreshCompleted;
@@ -59,6 +64,9 @@ namespace DuckovCustomModel.UI.Components
 
             if (_resetInvalidModelsButtonText != null)
                 _resetInvalidModelsButtonText.text = Localization.ResetInvalidModels;
+
+            if (_openModelFolderButtonText != null)
+                _openModelFolderButtonText.text = Localization.OpenModelFolder;
         }
 
         private void BuildRefreshButton(GameObject parent)
@@ -109,9 +117,50 @@ namespace DuckovCustomModel.UI.Components
             OnRefresh?.Invoke();
         }
 
+        private void BuildOpenModelFolderButton(GameObject parent)
+        {
+            _openModelFolderButton = UIFactory.CreateButton("OpenModelFolderButton", parent.transform,
+                OnOpenModelFolderButtonClicked, new(0.3f, 0.5f, 0.3f, 1)).GetComponent<Button>();
+            var openFolderButtonRect = _openModelFolderButton.GetComponent<RectTransform>();
+            openFolderButtonRect.sizeDelta = new(180, 0);
+
+            var openFolderButtonLayoutElement = _openModelFolderButton.gameObject.AddComponent<LayoutElement>();
+            openFolderButtonLayoutElement.preferredWidth = 180;
+            openFolderButtonLayoutElement.flexibleWidth = 0;
+            openFolderButtonLayoutElement.flexibleHeight = 1;
+
+            var openFolderTextObj = UIFactory.CreateText("Text", _openModelFolderButton.transform,
+                Localization.OpenModelFolder, 18, Color.white, TextAnchor.MiddleCenter);
+            UIFactory.SetupButtonText(openFolderTextObj);
+            _openModelFolderButtonText = openFolderTextObj.GetComponent<Text>();
+
+            UIFactory.SetupButtonColors(_openModelFolderButton, new(1, 1, 1, 1), new(0.4f, 0.6f, 0.4f, 1),
+                new(0.3f, 0.5f, 0.3f, 1), new(0.4f, 0.6f, 0.4f, 1));
+        }
+
         private void OnResetInvalidModelsButtonClicked()
         {
             OnResetInvalidModels?.Invoke();
+        }
+
+        private static void OnOpenModelFolderButtonClicked()
+        {
+            try
+            {
+                var modelsDirectory = ModelManager.ModelsDirectory;
+                if (!Directory.Exists(modelsDirectory))
+                    Directory.CreateDirectory(modelsDirectory);
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = modelsDirectory,
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Failed to open model folder: {ex.Message}");
+            }
         }
 
         private void OnModelListRefreshStarted()

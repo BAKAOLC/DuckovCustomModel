@@ -44,6 +44,7 @@ namespace DuckovCustomModel.Localizations
             { "TargetPet", "Pet" },
             { "TargetAICharacter", "AI Character" },
             { "ResetInvalidModels", "Reset Invalid Models" },
+            { "OpenModelFolder", "Open Model Folder" },
             { "ModelSelection", "Model Selection" },
             { "Settings", "Settings" },
             { "ShowAnimatorParameters", "Show Animator Parameters" },
@@ -95,6 +96,7 @@ namespace DuckovCustomModel.Localizations
         public static string TargetPet => GetText("TargetPet");
         public static string TargetAICharacter => GetText("TargetAICharacter");
         public static string ResetInvalidModels => GetText("ResetInvalidModels");
+        public static string OpenModelFolder => GetText("OpenModelFolder");
         public static string ModelSelection => GetText("ModelSelection");
         public static string Settings => GetText("Settings");
         public static string ShowAnimatorParameters => GetText("ShowAnimatorParameters");

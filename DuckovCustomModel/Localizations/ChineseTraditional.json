@@ -17,6 +17,7 @@
   "TargetPet": "寵物",
   "TargetAICharacter": "AI角色",
   "ResetInvalidModels": "重置無效模型",
+  "OpenModelFolder": "開啟模型資料夾",
   "ModelSelection": "模型選擇",
   "Settings": "設定",
   "ShowAnimatorParameters": "顯示動畫器參數",

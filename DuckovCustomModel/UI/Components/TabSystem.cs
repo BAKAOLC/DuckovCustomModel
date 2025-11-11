@@ -27,14 +27,7 @@ namespace DuckovCustomModel.UI.Components
             _tabContainer.transform.SetParent(parent, false);
             UIFactory.SetupRectTransform(_tabContainer, new(0, 1), new(1, 1), new(0, 60), new(0.5f, 1), new(0, -40));
 
-            var tabLayout = _tabContainer.GetComponent<HorizontalLayoutGroup>();
-            tabLayout.spacing = 8;
-            tabLayout.padding = new(10, 8, 10, 8);
-            tabLayout.childAlignment = TextAnchor.MiddleLeft;
-            tabLayout.childControlWidth = false;
-            tabLayout.childControlHeight = true;
-            tabLayout.childForceExpandWidth = false;
-            tabLayout.childForceExpandHeight = true;
+            UIFactory.SetupHorizontalLayoutGroup(_tabContainer, 8f, new(10, 8, 10, 8));
 
             Localization.OnLanguageChangedEvent += OnLanguageChanged;
         }

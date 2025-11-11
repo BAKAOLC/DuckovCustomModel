@@ -33,21 +33,9 @@ namespace DuckovCustomModel.UI.Components
             _scrollRect = scrollView;
 
             _content = content;
-            _content.AddComponent<VerticalLayoutGroup>();
-            _content.AddComponent<ContentSizeFitter>();
-
-            var layoutGroup = _content.GetComponent<VerticalLayoutGroup>();
-            layoutGroup.padding = new(10, 10, 10, 10);
-            layoutGroup.spacing = 10;
-            layoutGroup.childAlignment = TextAnchor.UpperCenter;
-            layoutGroup.childControlWidth = true;
-            layoutGroup.childControlHeight = false;
-            layoutGroup.childForceExpandWidth = true;
-            layoutGroup.childForceExpandHeight = false;
-
-            var sizeFitter = _content.GetComponent<ContentSizeFitter>();
-            sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            UIFactory.SetupVerticalLayoutGroup(_content, 10f, new(10, 10, 10, 10), TextAnchor.UpperCenter,
+                true, false, true);
+            UIFactory.SetupContentSizeFitter(_content, ContentSizeFitter.FitMode.Unconstrained);
 
             Localization.OnLanguageChangedEvent += OnLanguageChanged;
         }
@@ -91,15 +79,8 @@ namespace DuckovCustomModel.UI.Components
                         ? Localization.HideCharacterEquipment
                         : Localization.HidePetEquipment,
                 18, Color.white);
-            var labelRect = label.GetComponent<RectTransform>();
-            labelRect.anchorMin = new(0, 0.5f);
-            labelRect.anchorMax = new(0, 0.5f);
-            labelRect.pivot = new(0, 0.5f);
-            labelRect.sizeDelta = new(0, 30);
-            labelRect.anchoredPosition = new(20, 0);
-            var labelSizeFitter = label.AddComponent<ContentSizeFitter>();
-            labelSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            labelSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            UIFactory.SetupLeftLabel(label);
+            UIFactory.SetupContentSizeFitter(label);
 
             var isOn = false;
             if (hideEquipmentConfig != null)
@@ -112,12 +93,7 @@ namespace DuckovCustomModel.UI.Components
 
             var toggle = UIFactory.CreateToggle("HideEquipmentToggle", settingRow.transform, isOn,
                 OnHideEquipmentToggleChanged);
-            var toggleRect = toggle.GetComponent<RectTransform>();
-            toggleRect.anchorMin = new(1, 0.5f);
-            toggleRect.anchorMax = new(1, 0.5f);
-            toggleRect.pivot = new(1, 0.5f);
-            toggleRect.sizeDelta = new(20, 20);
-            toggleRect.anchoredPosition = new(-20, 0);
+            UIFactory.SetupRightControl(toggle.gameObject, new(20, 20));
 
             _hideEquipmentToggle = toggle;
         }
@@ -131,15 +107,8 @@ namespace DuckovCustomModel.UI.Components
 
             var label = UIFactory.CreateText("Label", settingRow.transform, Localization.EnableIdleAudio, 18,
                 Color.white);
-            var labelRect = label.GetComponent<RectTransform>();
-            labelRect.anchorMin = new(0, 0.5f);
-            labelRect.anchorMax = new(0, 0.5f);
-            labelRect.pivot = new(0, 0.5f);
-            labelRect.sizeDelta = new(0, 30);
-            labelRect.anchoredPosition = new(20, 0);
-            var labelSizeFitter = label.AddComponent<ContentSizeFitter>();
-            labelSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            labelSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            UIFactory.SetupLeftLabel(label);
+            UIFactory.SetupContentSizeFitter(label);
 
             var isOn = false;
             if (idleAudioConfig != null)
@@ -152,12 +121,7 @@ namespace DuckovCustomModel.UI.Components
 
             var toggle = UIFactory.CreateToggle("EnableIdleAudioToggle", settingRow.transform, isOn,
                 OnEnableIdleAudioToggleChanged);
-            var toggleRect = toggle.GetComponent<RectTransform>();
-            toggleRect.anchorMin = new(1, 0.5f);
-            toggleRect.anchorMax = new(1, 0.5f);
-            toggleRect.pivot = new(1, 0.5f);
-            toggleRect.sizeDelta = new(20, 20);
-            toggleRect.anchoredPosition = new(-20, 0);
+            UIFactory.SetupRightControl(toggle.gameObject, new(20, 20));
 
             _enableIdleAudioToggle = toggle;
         }
@@ -178,53 +142,29 @@ namespace DuckovCustomModel.UI.Components
             var minIntervalRow = CreateSettingRow();
             var minLabel = UIFactory.CreateText("Label", minIntervalRow.transform,
                 $"{Localization.IdleAudioInterval} {Localization.Seconds} ({Localization.MinValue})", 18, Color.white);
-            var minLabelRect = minLabel.GetComponent<RectTransform>();
-            minLabelRect.anchorMin = new(0, 0.5f);
-            minLabelRect.anchorMax = new(0, 0.5f);
-            minLabelRect.pivot = new(0, 0.5f);
-            minLabelRect.sizeDelta = new(0, 30);
-            minLabelRect.anchoredPosition = new(20, 0);
-            var minLabelSizeFitter = minLabel.AddComponent<ContentSizeFitter>();
-            minLabelSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            minLabelSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            UIFactory.SetupLeftLabel(minLabel);
+            UIFactory.SetupContentSizeFitter(minLabel);
 
             _idleAudioMinIntervalInput =
                 UIFactory.CreateInputField("IdleAudioMinIntervalInput", minIntervalRow.transform);
             _idleAudioMinIntervalInput.text = interval.Min.ToString("F1");
             if (_idleAudioMinIntervalInput.textComponent != null)
                 _idleAudioMinIntervalInput.textComponent.fontSize += 4;
-            var minInputRect = _idleAudioMinIntervalInput.GetComponent<RectTransform>();
-            minInputRect.anchorMin = new(1, 0.5f);
-            minInputRect.anchorMax = new(1, 0.5f);
-            minInputRect.pivot = new(1, 0.5f);
-            minInputRect.sizeDelta = new(100, 30);
-            minInputRect.anchoredPosition = new(-20, 0);
+            UIFactory.SetupRightControl(_idleAudioMinIntervalInput.gameObject, new(100, 30));
             _idleAudioMinIntervalInput.onEndEdit.AddListener(OnIdleAudioMinIntervalChanged);
 
             var maxIntervalRow = CreateSettingRow();
             var maxLabel = UIFactory.CreateText("Label", maxIntervalRow.transform,
                 $"{Localization.IdleAudioInterval} {Localization.Seconds} ({Localization.MaxValue})", 18, Color.white);
-            var maxLabelRect = maxLabel.GetComponent<RectTransform>();
-            maxLabelRect.anchorMin = new(0, 0.5f);
-            maxLabelRect.anchorMax = new(0, 0.5f);
-            maxLabelRect.pivot = new(0, 0.5f);
-            maxLabelRect.sizeDelta = new(0, 30);
-            maxLabelRect.anchoredPosition = new(20, 0);
-            var maxLabelSizeFitter = maxLabel.AddComponent<ContentSizeFitter>();
-            maxLabelSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            maxLabelSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            UIFactory.SetupLeftLabel(maxLabel);
+            UIFactory.SetupContentSizeFitter(maxLabel);
 
             _idleAudioMaxIntervalInput =
                 UIFactory.CreateInputField("IdleAudioMaxIntervalInput", maxIntervalRow.transform);
             _idleAudioMaxIntervalInput.text = interval.Max.ToString("F1");
             if (_idleAudioMaxIntervalInput.textComponent != null)
                 _idleAudioMaxIntervalInput.textComponent.fontSize += 4;
-            var maxInputRect = _idleAudioMaxIntervalInput.GetComponent<RectTransform>();
-            maxInputRect.anchorMin = new(1, 0.5f);
-            maxInputRect.anchorMax = new(1, 0.5f);
-            maxInputRect.pivot = new(1, 0.5f);
-            maxInputRect.sizeDelta = new(100, 30);
-            maxInputRect.anchoredPosition = new(-20, 0);
+            UIFactory.SetupRightControl(_idleAudioMaxIntervalInput.gameObject, new(100, 30));
             _idleAudioMaxIntervalInput.onEndEdit.AddListener(OnIdleAudioMaxIntervalChanged);
         }
 
@@ -240,12 +180,7 @@ namespace DuckovCustomModel.UI.Components
             rowImage.color = isEven ? new(0.12f, 0.14f, 0.16f, 0.8f) : new(0.1f, 0.12f, 0.14f, 0.8f);
             _settingRowIndex++;
 
-            var rowRect = row.GetComponent<RectTransform>();
-            rowRect.anchorMin = new(0, 1);
-            rowRect.anchorMax = new(1, 1);
-            rowRect.pivot = new(0.5f, 1);
-            rowRect.sizeDelta = new(0, 50);
-            rowRect.anchoredPosition = Vector2.zero;
+            UIFactory.SetupAnchor(row, new(0, 1), new(1, 1), new(0.5f, 1), new(0, 50), Vector2.zero);
 
             var rowLayoutElement = row.AddComponent<LayoutElement>();
             rowLayoutElement.preferredHeight = 50;

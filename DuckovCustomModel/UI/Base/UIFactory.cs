@@ -185,6 +185,75 @@ namespace DuckovCustomModel.UI.Base
             if (anchoredPosition.HasValue) rect.anchoredPosition = anchoredPosition.Value;
         }
 
+        public static void SetupAnchor(GameObject obj, Vector2 anchorMin, Vector2 anchorMax, Vector2? pivot = null,
+            Vector2? sizeDelta = null, Vector2? anchoredPosition = null)
+        {
+            var rect = obj.GetComponent<RectTransform>();
+            if (rect == null) return;
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            if (pivot.HasValue) rect.pivot = pivot.Value;
+            if (sizeDelta.HasValue) rect.sizeDelta = sizeDelta.Value;
+            if (anchoredPosition.HasValue) rect.anchoredPosition = anchoredPosition.Value;
+        }
+
+        public static void SetupLeftLabel(GameObject obj, float height = 30f, float leftOffset = 20f)
+        {
+            SetupAnchor(obj, new(0, 0.5f), new(0, 0.5f), new(0, 0.5f), new(0, height), new(leftOffset, 0));
+        }
+
+        public static void SetupRightControl(GameObject obj, Vector2 sizeDelta, float rightOffset = -20f)
+        {
+            SetupAnchor(obj, new(1, 0.5f), new(1, 0.5f), new(1, 0.5f), sizeDelta, new(rightOffset, 0));
+        }
+
+        public static void SetupRightLabel(GameObject obj, float height = 25f, float rightOffset = -120f)
+        {
+            SetupAnchor(obj, new(1, 0.5f), new(1, 0.5f), new(1, 0.5f), new(0, height), new(rightOffset, 0));
+        }
+
+        public static void SetupContentSizeFitter(GameObject obj,
+            ContentSizeFitter.FitMode horizontalFit = ContentSizeFitter.FitMode.PreferredSize,
+            ContentSizeFitter.FitMode verticalFit = ContentSizeFitter.FitMode.PreferredSize)
+        {
+            var sizeFitter = obj.GetComponent<ContentSizeFitter>();
+            if (sizeFitter == null) sizeFitter = obj.AddComponent<ContentSizeFitter>();
+            sizeFitter.horizontalFit = horizontalFit;
+            sizeFitter.verticalFit = verticalFit;
+        }
+
+        public static void SetupVerticalLayoutGroup(GameObject obj, float spacing = 10f,
+            RectOffset? padding = null, TextAnchor childAlignment = TextAnchor.UpperCenter,
+            bool childControlWidth = true, bool childControlHeight = false,
+            bool childForceExpandWidth = false, bool childForceExpandHeight = false)
+        {
+            var layoutGroup = obj.GetComponent<VerticalLayoutGroup>();
+            if (layoutGroup == null) layoutGroup = obj.AddComponent<VerticalLayoutGroup>();
+            layoutGroup.spacing = spacing;
+            layoutGroup.padding = padding ?? new(10, 10, 10, 10);
+            layoutGroup.childAlignment = childAlignment;
+            layoutGroup.childControlWidth = childControlWidth;
+            layoutGroup.childControlHeight = childControlHeight;
+            layoutGroup.childForceExpandWidth = childForceExpandWidth;
+            layoutGroup.childForceExpandHeight = childForceExpandHeight;
+        }
+
+        public static void SetupHorizontalLayoutGroup(GameObject obj, float spacing = 8f,
+            RectOffset? padding = null, TextAnchor childAlignment = TextAnchor.MiddleLeft,
+            bool childControlWidth = false, bool childControlHeight = true,
+            bool childForceExpandWidth = false, bool childForceExpandHeight = true)
+        {
+            var layoutGroup = obj.GetComponent<HorizontalLayoutGroup>();
+            if (layoutGroup == null) layoutGroup = obj.AddComponent<HorizontalLayoutGroup>();
+            layoutGroup.spacing = spacing;
+            layoutGroup.padding = padding ?? new(10, 8, 10, 8);
+            layoutGroup.childAlignment = childAlignment;
+            layoutGroup.childControlWidth = childControlWidth;
+            layoutGroup.childControlHeight = childControlHeight;
+            layoutGroup.childForceExpandWidth = childForceExpandWidth;
+            layoutGroup.childForceExpandHeight = childForceExpandHeight;
+        }
+
         public static void SetupButtonColors(Button button, Color? normalColor = null, Color? highlightedColor = null,
             Color? pressedColor = null, Color? selectedColor = null)
         {
