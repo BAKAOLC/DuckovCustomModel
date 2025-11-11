@@ -55,9 +55,18 @@ namespace DuckovCustomModel.UI.Components
                 if (usingModel != null)
                 {
                     if (target.TargetType == ModelTarget.AICharacter && target.AICharacterNameKey != null)
-                        hasModel = !string.IsNullOrEmpty(usingModel.GetAICharacterModelID(target.AICharacterNameKey));
+                    {
+                        if (target.AICharacterNameKey == AICharacters.AllAICharactersKey)
+                            hasModel = !string.IsNullOrEmpty(
+                                usingModel.GetAICharacterModelID(AICharacters.AllAICharactersKey));
+                        else
+                            hasModel = !string.IsNullOrEmpty(
+                                usingModel.GetAICharacterModelID(target.AICharacterNameKey));
+                    }
                     else
+                    {
                         hasModel = !string.IsNullOrEmpty(usingModel.GetModelID(target.TargetType));
+                    }
                 }
 
                 target.HasModel = hasModel;
@@ -97,6 +106,8 @@ namespace DuckovCustomModel.UI.Components
                 TargetInfo.CreateCharacterTarget(),
                 TargetInfo.CreatePetTarget(),
             };
+
+            targets.Add(TargetInfo.CreateAllAICharactersTarget());
 
             foreach (var nameKey in AICharacters.SupportedAICharacters)
             {

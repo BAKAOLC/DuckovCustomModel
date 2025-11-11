@@ -16,6 +16,7 @@
   "TargetCharacter": "Character",
   "TargetPet": "Pet",
   "TargetAICharacter": "AI Character",
+  "TargetAllAICharacters": "All AI Characters",
   "ResetInvalidModels": "Reset Invalid Models",
   "OpenModelFolder": "Open Model Folder",
   "ModelSelection": "Model Selection",

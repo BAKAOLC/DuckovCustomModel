@@ -43,6 +43,7 @@ namespace DuckovCustomModel.Localizations
             { "TargetCharacter", "Character" },
             { "TargetPet", "Pet" },
             { "TargetAICharacter", "AI Character" },
+            { "TargetAllAICharacters", "All AI Characters" },
             { "ResetInvalidModels", "Reset Invalid Models" },
             { "OpenModelFolder", "Open Model Folder" },
             { "ModelSelection", "Model Selection" },
@@ -96,6 +97,7 @@ namespace DuckovCustomModel.Localizations
         public static string TargetCharacter => GetText("TargetCharacter");
         public static string TargetPet => GetText("TargetPet");
         public static string TargetAICharacter => GetText("TargetAICharacter");
+        public static string TargetAllAICharacters => GetText("TargetAllAICharacters");
         public static string ResetInvalidModels => GetText("ResetInvalidModels");
         public static string OpenModelFolder => GetText("OpenModelFolder");
         public static string ModelSelection => GetText("ModelSelection");

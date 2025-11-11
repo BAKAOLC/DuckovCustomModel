@@ -170,9 +170,19 @@ namespace DuckovCustomModel
                     where !string.IsNullOrEmpty(modelID)
                     select modelID);
 
-                priorityModelIDs.AddRange(AICharacters.SupportedAICharacters
-                    .Select(nameKey => UsingModel.GetAICharacterModelID(nameKey))
-                    .Where(modelID => !string.IsNullOrEmpty(modelID)));
+                var aiModelIDs = new HashSet<string>();
+                foreach (var nameKey in AICharacters.SupportedAICharacters)
+                {
+                    var modelID = UsingModel.GetAICharacterModelID(nameKey);
+                    if (!string.IsNullOrEmpty(modelID))
+                        aiModelIDs.Add(modelID);
+                }
+
+                var defaultModelID = UsingModel.GetAICharacterModelID(AICharacters.AllAICharactersKey);
+                if (!string.IsNullOrEmpty(defaultModelID))
+                    aiModelIDs.Add(defaultModelID);
+
+                priorityModelIDs.AddRange(aiModelIDs);
             }
 
             ModelListManager.RefreshModelList(priorityModelIDs);

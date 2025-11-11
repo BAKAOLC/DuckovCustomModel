@@ -303,7 +303,7 @@ namespace DuckovCustomModel.Managers
 
             foreach (var nameKey in AICharacters.SupportedAICharacters)
             {
-                var modelID = ModBehaviour.Instance.UsingModel.GetAICharacterModelID(nameKey);
+                var modelID = ModBehaviour.Instance.UsingModel.GetAICharacterModelIDWithFallback(nameKey);
                 if (string.IsNullOrEmpty(modelID)) continue;
 
                 ApplyModelToAICharacter(nameKey, modelID, forceReapply);

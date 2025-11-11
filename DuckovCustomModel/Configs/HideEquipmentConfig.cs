@@ -136,7 +136,9 @@ namespace DuckovCustomModel.Configs
 
         public bool GetHideAICharacterEquipment(string nameKey)
         {
-            return HideAICharacterEquipment.TryGetValue(nameKey, out var value) && value;
+            if (!string.IsNullOrEmpty(nameKey) && HideAICharacterEquipment.TryGetValue(nameKey, out var value))
+                return value;
+            return HideAICharacterEquipment.GetValueOrDefault(AICharacters.AllAICharactersKey, false);
         }
 
         public void SetHideAICharacterEquipment(string nameKey, bool value)

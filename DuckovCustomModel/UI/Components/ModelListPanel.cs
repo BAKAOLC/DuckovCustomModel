@@ -207,8 +207,14 @@ namespace DuckovCustomModel.UI.Components
                                                                     || m.ModelID.ToLowerInvariant()
                                                                         .Contains(searchLower))))
             {
-                var compatibleModels = bundle.Models
-                    .Where(m => m.CompatibleWithAICharacter(nameKey)).ToArray();
+                ModelInfo[] compatibleModels;
+                if (nameKey == AICharacters.AllAICharactersKey)
+                    compatibleModels = bundle.Models
+                        .Where(m => m.CompatibleWithType(ModelTarget.AICharacter)).ToArray();
+                else
+                    compatibleModels = bundle.Models
+                        .Where(m => m.CompatibleWithAICharacter(nameKey)).ToArray();
+
                 if (compatibleModels.Length <= 0) continue;
                 var filteredBundle = bundle.CreateFilteredCopy(compatibleModels);
                 _filteredModelBundles.Add(filteredBundle);
@@ -448,7 +454,10 @@ namespace DuckovCustomModel.UI.Components
             {
                 usingModel.SetAICharacterModelID(_currentTarget.AICharacterNameKey, model.ModelID);
                 ConfigManager.SaveConfigToFile(usingModel, "UsingModel.json");
-                ModelListManager.ApplyModelToAICharacter(_currentTarget.AICharacterNameKey, model.ModelID, true);
+                if (_currentTarget.AICharacterNameKey == AICharacters.AllAICharactersKey)
+                    ModelListManager.ApplyAllAICharacterModelsFromConfig(true);
+                else
+                    ModelListManager.ApplyModelToAICharacter(_currentTarget.AICharacterNameKey, model.ModelID, true);
             }
             else
             {
@@ -470,11 +479,37 @@ namespace DuckovCustomModel.UI.Components
 
             if (_currentTarget.TargetType == ModelTarget.AICharacter && _currentTarget.AICharacterNameKey != null)
             {
-                usingModel.SetAICharacterModelID(_currentTarget.AICharacterNameKey, string.Empty);
-                ConfigManager.SaveConfigToFile(usingModel, "UsingModel.json");
-                var handlers = ModelManager.GetAICharacterModelHandlers(_currentTarget.AICharacterNameKey);
-                foreach (var handler in handlers)
-                    handler.RestoreOriginalModel();
+                if (_currentTarget.AICharacterNameKey == AICharacters.AllAICharactersKey)
+                {
+                    usingModel.SetAICharacterModelID(AICharacters.AllAICharactersKey, string.Empty);
+                    ConfigManager.SaveConfigToFile(usingModel, "UsingModel.json");
+                    foreach (var nameKey in AICharacters.SupportedAICharacters)
+                    {
+                        var modelID = usingModel.GetAICharacterModelID(nameKey);
+                        if (string.IsNullOrEmpty(modelID))
+                        {
+                            var handlers = ModelManager.GetAICharacterModelHandlers(nameKey);
+                            foreach (var handler in handlers)
+                                handler.RestoreOriginalModel();
+                        }
+                    }
+                }
+                else
+                {
+                    usingModel.SetAICharacterModelID(_currentTarget.AICharacterNameKey, string.Empty);
+                    ConfigManager.SaveConfigToFile(usingModel, "UsingModel.json");
+                    var modelID = usingModel.GetAICharacterModelIDWithFallback(_currentTarget.AICharacterNameKey);
+                    if (string.IsNullOrEmpty(modelID))
+                    {
+                        var handlers = ModelManager.GetAICharacterModelHandlers(_currentTarget.AICharacterNameKey);
+                        foreach (var handler in handlers)
+                            handler.RestoreOriginalModel();
+                    }
+                    else
+                    {
+                        ModelListManager.ApplyModelToAICharacter(_currentTarget.AICharacterNameKey, modelID, true);
+                    }
+                }
             }
             else
             {

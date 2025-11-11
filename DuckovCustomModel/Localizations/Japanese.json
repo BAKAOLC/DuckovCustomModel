@@ -16,6 +16,7 @@
   "TargetCharacter": "キャラクター",
   "TargetPet": "ペット",
   "TargetAICharacter": "AIキャラクター",
+  "TargetAllAICharacters": "すべてのAIキャラクター",
   "ResetInvalidModels": "無効なモデルをリセット",
   "OpenModelFolder": "モデルフォルダを開く",
   "ModelSelection": "モデル選択",

@@ -16,6 +16,7 @@
   "TargetCharacter": "角色",
   "TargetPet": "宠物",
   "TargetAICharacter": "AI角色",
+  "TargetAllAICharacters": "所有AI角色",
   "ResetInvalidModels": "重置无效模型",
   "OpenModelFolder": "打开模型文件夹",
   "ModelSelection": "模型选择",

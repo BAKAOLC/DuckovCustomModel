@@ -43,5 +43,16 @@ namespace DuckovCustomModel.UI.Data
                 AICharacterNameKey = nameKey,
             };
         }
+
+        public static TargetInfo CreateAllAICharactersTarget()
+        {
+            return new()
+            {
+                Id = "AI_*",
+                DisplayName = Localization.TargetAllAICharacters,
+                TargetType = ModelTarget.AICharacter,
+                AICharacterNameKey = AICharacters.AllAICharactersKey,
+            };
+        }
     }
 }

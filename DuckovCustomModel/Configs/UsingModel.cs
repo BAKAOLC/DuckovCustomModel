@@ -32,6 +32,20 @@ namespace DuckovCustomModel.Configs
             return AICharacterModelIDs.TryGetValue(nameKey, out var modelID) ? modelID : string.Empty;
         }
 
+        public string GetAICharacterModelIDWithFallback(string nameKey)
+        {
+            if (string.IsNullOrEmpty(nameKey)) return string.Empty;
+
+            if (AICharacterModelIDs.TryGetValue(nameKey, out var modelID) && !string.IsNullOrEmpty(modelID))
+                return modelID;
+
+            if (AICharacterModelIDs.TryGetValue(AICharacters.AllAICharactersKey, out var defaultModelID) &&
+                !string.IsNullOrEmpty(defaultModelID))
+                return defaultModelID;
+
+            return string.Empty;
+        }
+
         public void SetAICharacterModelID(string nameKey, string modelID)
         {
             if (string.IsNullOrEmpty(modelID))

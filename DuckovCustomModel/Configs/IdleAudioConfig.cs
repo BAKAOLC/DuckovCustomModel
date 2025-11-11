@@ -123,9 +123,13 @@ namespace DuckovCustomModel.Configs
 
         public IdleAudioInterval GetAICharacterIdleAudioInterval(string nameKey)
         {
-            return AICharacterIdleAudioIntervals.TryGetValue(nameKey, out var value) && value != null
-                ? value
-                : new() { Min = 30f, Max = 45f };
+            if (!string.IsNullOrEmpty(nameKey) && AICharacterIdleAudioIntervals.TryGetValue(nameKey, out var value) &&
+                value != null)
+                return value;
+            if (AICharacterIdleAudioIntervals.TryGetValue(AICharacters.AllAICharactersKey, out var defaultInterval) &&
+                defaultInterval != null)
+                return defaultInterval;
+            return new() { Min = 30f, Max = 45f };
         }
 
         public void SetAICharacterIdleAudioInterval(string nameKey, float min, float max)

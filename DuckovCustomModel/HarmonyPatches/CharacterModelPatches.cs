@@ -28,12 +28,8 @@ namespace DuckovCustomModel.HarmonyPatches
             var usingModel = ModBehaviour.Instance?.UsingModel;
             if (usingModel == null) return;
 
-            var modelID = usingModel.GetAICharacterModelID(preset.nameKey);
-            if (string.IsNullOrEmpty(modelID))
-            {
-                modelID = usingModel.GetAICharacterModelID(AICharacters.AllAICharactersKey);
-                if (string.IsNullOrEmpty(modelID)) return;
-            }
+            var modelID = usingModel.GetAICharacterModelIDWithFallback(preset.nameKey);
+            if (string.IsNullOrEmpty(modelID)) return;
 
             if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo)) return;
 
