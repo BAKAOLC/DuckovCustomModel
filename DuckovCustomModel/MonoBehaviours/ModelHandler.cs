@@ -28,6 +28,7 @@ namespace DuckovCustomModel.MonoBehaviours
         private ModelBundleInfo? _currentModelBundleInfo;
         private ModelInfo? _currentModelInfo;
         private GameObject? _deathLootBoxPrefab;
+        private GameObject? _headColliderObject;
 
         private float _nextIdleAudioTime;
         private GameObject? _originalModelOcclusionBody;
@@ -186,7 +187,7 @@ namespace DuckovCustomModel.MonoBehaviours
 
             RecordOriginalModelSockets();
             RecordOriginalModelOcclusionBody();
-            InitializeBasicComponentsForOriginalModel();
+            RecordOriginalHeadCollider();
 
             ModLogger.Log("ModelHandler initialized successfully.");
             IsInitialized = true;
@@ -276,6 +277,7 @@ namespace DuckovCustomModel.MonoBehaviours
             if (!IsHiddenOriginalModel) return;
 
             RestoreToOriginalModelSockets();
+            UpdateColliderHeight();
 
             var customFaceInstance = GetOriginalCustomFaceInstance();
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(true);
@@ -344,6 +346,7 @@ namespace DuckovCustomModel.MonoBehaviours
             }
 
             ChangeToCustomModelSockets();
+            UpdateColliderHeight();
 
             var customFaceInstance = GetOriginalCustomFaceInstance();
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(false);
@@ -523,7 +526,7 @@ namespace DuckovCustomModel.MonoBehaviours
             _originalModelOcclusionBody = originalDuckBody.gameObject;
         }
 
-        private void InitializeBasicComponentsForOriginalModel()
+        private void RecordOriginalHeadCollider()
         {
             if (OriginalCharacterModel == null) return;
 
@@ -533,8 +536,26 @@ namespace DuckovCustomModel.MonoBehaviours
             var headCollider = helmetTransform.GetComponentInChildren<HeadCollider>();
             if (headCollider == null) return;
 
+            _headColliderObject = headCollider.gameObject;
+
             if (headCollider.gameObject.GetComponent<DontHideAsEquipment>() != null) return;
             headCollider.gameObject.AddComponent<DontHideAsEquipment>();
+        }
+
+        private void UpdateColliderHeight()
+        {
+            if (_headColliderObject == null || CharacterMainControl == null) return;
+
+            var mainDamageReceiver = CharacterMainControl.mainDamageReceiver;
+            if (mainDamageReceiver == null) return;
+
+            var capsuleCollider = mainDamageReceiver.GetComponent<CapsuleCollider>();
+            if (capsuleCollider == null) return;
+
+            var height = (float)(_headColliderObject.transform.localScale.y * 0.5 +
+                _headColliderObject.transform.position.y - CharacterMainControl.transform.position.y + 0.5);
+            capsuleCollider.height = height;
+            capsuleCollider.center = Vector3.up * (height * 0.5f);
         }
 
         private void UpdateToCustomSocket(GameObject targetGameObject)
