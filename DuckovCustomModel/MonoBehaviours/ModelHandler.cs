@@ -18,21 +18,18 @@ namespace DuckovCustomModel.MonoBehaviours
             CharacterModelSocketUtils.AllSocketFields;
 
         private readonly Dictionary<string, Transform> _customModelLocatorCache = [];
-
         private readonly Dictionary<FieldInfo, Transform> _customModelSockets = [];
-
         private readonly HashSet<GameObject> _modifiedDeathLootBoxes = [];
         private readonly Dictionary<FieldInfo, Transform> _originalModelSockets = [];
-
         private readonly Dictionary<string, List<string>> _soundsByTag = [];
         private readonly HashSet<GameObject> _usingCustomSocketObjects = [];
 
         private ModelBundleInfo? _currentModelBundleInfo;
         private ModelInfo? _currentModelInfo;
-        private GameObject? _customModelOcclusionBody;
         private GameObject? _deathLootBoxPrefab;
 
         private float _nextIdleAudioTime;
+        private GameObject? _originalModelOcclusionBody;
 
         private bool ReplaceShader => _currentModelInfo is not { Features: { Length: > 0 } }
                                       || !_currentModelInfo.Features.Contains(ModelFeatures.NoAutoShaderReplace);
@@ -186,6 +183,7 @@ namespace DuckovCustomModel.MonoBehaviours
             CustomAnimatorControl = customAnimatorControl;
             customAnimatorControl.Initialize(this);
 
+            RecordOriginalModelOcclusionBody();
             RecordOriginalModelSockets();
             ModLogger.Log("ModelHandler initialized successfully.");
             IsInitialized = true;
@@ -267,9 +265,6 @@ namespace DuckovCustomModel.MonoBehaviours
 
             if (CustomModelInstance != null) CustomModelInstance.SetActive(false);
 
-            if (_customModelOcclusionBody != null)
-                _customModelOcclusionBody.SetActive(false);
-
             if (IsHiddenOriginalModel)
                 ModLogger.Log("Restored to original model.");
             IsHiddenOriginalModel = false;
@@ -311,12 +306,6 @@ namespace DuckovCustomModel.MonoBehaviours
                 _deathLootBoxPrefab = null;
             }
 
-            if (_customModelOcclusionBody != null)
-            {
-                DestroyImmediate(_customModelOcclusionBody);
-                _customModelOcclusionBody = null;
-            }
-
             foreach (var destroyAdapter in _modifiedDeathLootBoxes
                          .Select(deathLootBox => deathLootBox.GetComponent<OnDestroyAdapter>())
                          .Where(destroyAdapter => destroyAdapter != null))
@@ -352,9 +341,6 @@ namespace DuckovCustomModel.MonoBehaviours
 
             var customFaceInstance = GetOriginalCustomFaceInstance();
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(false);
-
-            if (_customModelOcclusionBody != null)
-                _customModelOcclusionBody.SetActive(true);
 
             CustomModelInstance.SetActive(true);
             ChangeToCustomModelSockets();
@@ -436,6 +422,8 @@ namespace DuckovCustomModel.MonoBehaviours
             if (ReplaceShader)
                 ReplaceRenderersShader(renderers);
 
+            SetShowBackMaterial(CustomModelInstance);
+
             // Get the Animator component from the custom model
             CustomAnimator = CustomModelInstance.GetComponent<Animator>();
             if (CustomAnimatorControl != null)
@@ -450,10 +438,6 @@ namespace DuckovCustomModel.MonoBehaviours
                 }
 
             RecordCustomModelSockets();
-            CreateCustomModelOcclusionBody();
-
-            if (_customModelOcclusionBody != null)
-                _customModelOcclusionBody.SetActive(true);
 
             ModLogger.Log($"Custom model initialized: {customModelPrefab.name}");
 
@@ -516,9 +500,9 @@ namespace DuckovCustomModel.MonoBehaviours
                 : null;
         }
 
-        private void CreateCustomModelOcclusionBody()
+        private void RecordOriginalModelOcclusionBody()
         {
-            if (_customModelOcclusionBody != null) return;
+            if (_originalModelOcclusionBody != null) return;
 
             var originalCustomFaceInstance = GetOriginalCustomFaceInstance();
             if (originalCustomFaceInstance == null) return;
@@ -526,47 +510,7 @@ namespace DuckovCustomModel.MonoBehaviours
             var originalDuckBody = originalCustomFaceInstance.Find("DuckBody");
             if (originalDuckBody == null) return;
 
-            var parent = originalCustomFaceInstance.parent;
-            if (parent == null) return;
-
-            var worldScale = originalDuckBody.lossyScale;
-            var parentScale = parent.lossyScale;
-            var localScale = new Vector3(
-                worldScale.x / parentScale.x,
-                worldScale.y / parentScale.y,
-                worldScale.z / parentScale.z
-            );
-
-            _customModelOcclusionBody = Instantiate(originalDuckBody.gameObject, parent, true);
-            _customModelOcclusionBody.name = "CustomModelOcclusionBody";
-            _customModelOcclusionBody.transform.localScale = localScale;
-
-            var skinnedMeshRenderer = _customModelOcclusionBody.GetComponent<SkinnedMeshRenderer>();
-            if (skinnedMeshRenderer == null)
-            {
-                ModLogger.LogError("SkinnedMeshRenderer component not found on CustomModelOcclusionBody.");
-                DestroyImmediate(_customModelOcclusionBody);
-                return;
-            }
-
-            // 找到使用名字为 CharacterShowBack 的 shader 的材质球
-            Material? characterShowBackMaterial = null;
-            foreach (var material in skinnedMeshRenderer.materials)
-            {
-                if (material == null || material.shader == null ||
-                    material.shader.name != "CharacterShowBack") continue;
-                characterShowBackMaterial = material;
-                break;
-            }
-
-            if (characterShowBackMaterial == null)
-            {
-                ModLogger.LogError("Material with 'CharacterShowBack' shader not found on CustomModelOcclusionBody.");
-                DestroyImmediate(_customModelOcclusionBody);
-                return;
-            }
-
-            skinnedMeshRenderer.materials = [characterShowBackMaterial];
+            _originalModelOcclusionBody = originalDuckBody.gameObject;
         }
 
         private void UpdateToCustomSocket(GameObject targetGameObject)
@@ -638,6 +582,32 @@ namespace DuckovCustomModel.MonoBehaviours
             }
         }
 
+        private void SetShowBackMaterial(GameObject modelInstance)
+        {
+            if (_originalModelOcclusionBody == null) return;
+
+            var originalSkinnedMeshRenderer =
+                _originalModelOcclusionBody.GetComponent<SkinnedMeshRenderer>();
+            if (originalSkinnedMeshRenderer == null) return;
+
+            var characterShowBackShader = GameCharacterShowBackShader;
+            if (characterShowBackShader == null) return;
+
+            var originalMaterial = originalSkinnedMeshRenderer.materials
+                .FirstOrDefault(m => m != null && m.shader == characterShowBackShader);
+            if (originalMaterial == null) return;
+
+            var clonedMaterial = new Material(originalMaterial);
+            var renderers = GetAllRenderers(modelInstance).OfType<SkinnedMeshRenderer>().ToArray();
+            foreach (var renderer in renderers)
+            {
+                if (renderer.material == null) continue;
+                if (renderer.materials.Any(m => m != null && m.shader == characterShowBackShader))
+                    continue;
+                renderer.materials = renderer.materials.Concat([clonedMaterial]).ToArray();
+            }
+        }
+
         private static Transform? SearchLocatorTransform(GameObject modelInstance, string locatorName)
         {
             var transforms = modelInstance.GetComponentsInChildren<Transform>(true);
@@ -691,6 +661,9 @@ namespace DuckovCustomModel.MonoBehaviours
 
         // ReSharper disable once ShaderLabShaderReferenceNotResolved
         private static Shader GameDefaultShader => Shader.Find("SodaCraft/SodaCharacter");
+
+        // ReSharper disable once ShaderLabShaderReferenceNotResolved
+        private static Shader GameCharacterShowBackShader => Shader.Find("CharacterShowBack");
 
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
