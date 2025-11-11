@@ -1,4 +1,3 @@
-using System.Reflection;
 using DuckovCustomModel.Data;
 using DuckovCustomModel.MonoBehaviours;
 using HarmonyLib;
@@ -8,14 +7,12 @@ namespace DuckovCustomModel.HarmonyPatches
     [HarmonyPatch]
     internal static class SpawnPaperBoxActionPatches
     {
-        private static readonly FieldInfo InstanceField = AccessTools.Field(typeof(SpawnPaperBoxAction), "instance");
-
         [HarmonyPatch(typeof(SpawnPaperBoxAction), "OnTriggered")]
         [HarmonyPostfix]
         // ReSharper disable once InconsistentNaming
         internal static void SpawnPaperBoxAction_OnTriggered_Postfix(SpawnPaperBoxAction __instance)
         {
-            var instance = InstanceField.GetValue(__instance) as PaperBox;
+            var instance = __instance.instance;
             if (instance == null) return;
 
             var targetCharacter = instance.character;
@@ -43,7 +40,7 @@ namespace DuckovCustomModel.HarmonyPatches
         // ReSharper disable once InconsistentNaming
         internal static void SpawnPaperBoxAction_OnDestroy_Postfix(SpawnPaperBoxAction __instance)
         {
-            var instance = InstanceField.GetValue(__instance) as PaperBox;
+            var instance = __instance.instance;
             if (instance == null) return;
 
             var targetCharacter = instance.character;

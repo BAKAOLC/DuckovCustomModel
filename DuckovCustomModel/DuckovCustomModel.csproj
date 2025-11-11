@@ -35,6 +35,14 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Publicize Include="TeamSoda.Duckov.Core" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Lib.Harmony" Version="2.4.1">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>

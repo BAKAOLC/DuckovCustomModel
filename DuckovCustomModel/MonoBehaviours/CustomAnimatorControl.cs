@@ -1,18 +1,13 @@
 ﻿using System.Collections.Generic;
-using System.Reflection;
 using Duckov;
 using DuckovCustomModel.Data;
 using DuckovCustomModel.Utils;
-using HarmonyLib;
 using UnityEngine;
 
 namespace DuckovCustomModel.MonoBehaviours
 {
     public class CustomAnimatorControl : MonoBehaviour
     {
-        private static readonly FieldInfo HasAnimationIfDashCanControlField =
-            AccessTools.Field(typeof(CharacterAnimationControl), "hasAnimationIfDashCanControl");
-
         private readonly Dictionary<int, bool> _boolParams = new();
 
         private readonly Dictionary<int, float> _floatParams = new();
@@ -36,9 +31,8 @@ namespace DuckovCustomModel.MonoBehaviours
             {
                 if (_modelHandler == null)
                     return false;
-                if (_modelHandler.OriginalAnimationControl != null)
-                    return (bool)HasAnimationIfDashCanControlField.GetValue(_modelHandler.OriginalAnimationControl)!;
-                return false;
+                return _modelHandler.OriginalAnimationControl != null &&
+                       _modelHandler.OriginalAnimationControl.hasAnimationIfDashCanControl;
             }
         }
 
