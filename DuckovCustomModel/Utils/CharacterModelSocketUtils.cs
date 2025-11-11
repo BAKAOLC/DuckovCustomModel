@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Reflection;
+using DuckovCustomModel.Data;
 using HarmonyLib;
 using UnityEngine;
 
@@ -6,17 +8,17 @@ namespace DuckovCustomModel.Utils
 {
     public static class CharacterModelSocketUtils
     {
-        public static FieldInfo[] AllSocketFields =>
-        [
-            LeftHandSocket,
-            RightHandSocket,
-            ArmorSocket,
-            HelmetSocket,
-            FaceSocket,
-            BackpackSocket,
-            MeleeWeaponSocket,
-            PopTextSocket,
-        ];
+        public static IReadOnlyDictionary<FieldInfo, string> AllSocketFields => new Dictionary<FieldInfo, string>
+        {
+            { LeftHandSocket, SocketNames.LeftHand },
+            { RightHandSocket, SocketNames.RightHand },
+            { ArmorSocket, SocketNames.Armor },
+            { HelmetSocket, SocketNames.Helmet },
+            { FaceSocket, SocketNames.Face },
+            { BackpackSocket, SocketNames.Backpack },
+            { MeleeWeaponSocket, SocketNames.MeleeWeapon },
+            { PopTextSocket, SocketNames.PopText },
+        };
 
         // ReSharper disable once StringLiteralTypo
         public static FieldInfo LeftHandSocket { get; } = AccessTools.Field(typeof(CharacterModel), "lefthandSocket");

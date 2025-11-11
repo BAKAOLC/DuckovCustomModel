@@ -18,19 +18,26 @@ namespace DuckovCustomModel.HarmonyPatches
             var targetCharacter = instance.character;
             if (targetCharacter == null) return;
 
+            var modelHandler = targetCharacter.GetComponent<ModelHandler>();
+            if (modelHandler == null || !modelHandler.IsInitialized) return;
+
             var customSocketMarker = instance.GetComponent<CustomSocketMarker>();
             if (customSocketMarker == null)
             {
                 customSocketMarker = instance.gameObject.AddComponent<CustomSocketMarker>();
-                customSocketMarker.CustomSocketName = SocketNames.PaperBox;
-                customSocketMarker.OriginParent = instance.transform.parent;
+                customSocketMarker.AddCustomSocketName(SocketNames.PaperBox);
+
+                var socketTransform = __instance.socket switch
+                {
+                    SpawnPaperBoxAction.Sockets.helmat => modelHandler.GetOriginalSocketTransform(SocketNames.Helmet),
+                    SpawnPaperBoxAction.Sockets.armor => modelHandler.GetOriginalSocketTransform(SocketNames.Armor),
+                    _ => __instance.MainControl.transform,
+                };
+                customSocketMarker.OriginParent = socketTransform;
             }
 
             var dontHideAsEquipment = instance.GetComponent<DontHideAsEquipment>();
             if (dontHideAsEquipment == null) instance.gameObject.AddComponent<DontHideAsEquipment>();
-
-            var modelHandler = targetCharacter.GetComponent<ModelHandler>();
-            if (modelHandler == null || !modelHandler.IsInitialized) return;
 
             modelHandler.RegisterCustomSocketObject(instance.gameObject);
         }

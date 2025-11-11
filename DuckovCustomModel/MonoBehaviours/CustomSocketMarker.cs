@@ -1,21 +1,18 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DuckovCustomModel.MonoBehaviours
 {
     public class CustomSocketMarker : MonoBehaviour
     {
-        [SerializeField] private string customSocketName = string.Empty;
-
+        [SerializeField] private List<string> customSocketNames = [];
         [SerializeField] private Transform? originParent;
+
         [SerializeField] private Vector3? _socketOffset;
         [SerializeField] private Quaternion? _socketRotation;
         [SerializeField] private Vector3? _socketScale;
 
-        public string CustomSocketName
-        {
-            get => customSocketName;
-            set => customSocketName = value;
-        }
+        public string[] CustomSocketNames => customSocketNames.ToArray();
 
         public Transform? OriginParent
         {
@@ -39,6 +36,16 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             get => _socketScale;
             set => _socketScale = value;
+        }
+
+        public void AddCustomSocketName(string socketName)
+        {
+            if (!customSocketNames.Contains(socketName)) customSocketNames.Add(socketName);
+        }
+
+        public void RemoveCustomSocketName(string socketName)
+        {
+            if (customSocketNames.Contains(socketName)) customSocketNames.Remove(socketName);
         }
     }
 }

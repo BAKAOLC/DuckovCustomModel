@@ -25,7 +25,7 @@ namespace DuckovCustomModel.HarmonyPatches
             if (customSocketMarker == null)
             {
                 customSocketMarker = ___rb.gameObject.AddComponent<CustomSocketMarker>();
-                customSocketMarker.CustomSocketName = SocketNames.Carriable;
+                customSocketMarker.AddCustomSocketName(SocketNames.Carriable);
                 customSocketMarker.OriginParent = ___rb.transform.parent;
                 customSocketMarker.SocketOffset = ___rb.transform.localPosition;
                 customSocketMarker.SocketRotation = ___rb.transform.localRotation;
