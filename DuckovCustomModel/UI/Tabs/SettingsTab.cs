@@ -216,7 +216,11 @@ namespace DuckovCustomModel.UI.Tabs
             if (_dcmButtonAnchorDropdown == null) return;
             var currentValue = _dcmButtonAnchorDropdown.value;
             RefreshAnchorDropdownOptions(_dcmButtonAnchorDropdown);
-            _dcmButtonAnchorDropdown.value = currentValue;
+            if (currentValue >= 0 && currentValue < _dcmButtonAnchorDropdown.options.Count)
+            {
+                _dcmButtonAnchorDropdown.value = -1;
+                _dcmButtonAnchorDropdown.value = currentValue;
+            }
         }
 
         private void RefreshDCMButtonPositionDisplay()
