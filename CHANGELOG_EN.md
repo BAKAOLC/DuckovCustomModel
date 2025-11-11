@@ -2,6 +2,16 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.7.6
+
+- Fixed the logic for obtaining the original model of character units; should now correctly match and process the original models for various character types
+- Added occlusion display handling for character models; character models should now correctly display outlines when occluded
+- Fixed issue where bundleinfo.json parsing errors would cause subsequent logic to be lost
+- Now when a bundle's JSON file has format errors, it will log the error and skip that bundle, continuing to process other normal bundles
+- Enhanced error handling during model loading to ensure errors in a single bundle do not affect overall functionality
+- Fixed issue where error messages (such as loading errors, missing prefabs, etc.) were not correctly displayed in the model list interface
+- Error messages are now correctly displayed in model list items, not just highlighted in red
+
 ## v1.7.5
 
 - Added model audio toggle feature, can configure whether to use model-provided audio in target settings

@@ -29,54 +29,62 @@ namespace DuckovCustomModel.Managers
 
             foreach (var modelBundleDir in modelBundleDirectories)
             {
-                var infoFilePath = Path.Combine(modelBundleDir, "bundleinfo.json");
-                if (!File.Exists(infoFilePath)) continue;
-
-                var bundleInfo = ModelBundleInfo.LoadFromDirectory(modelBundleDir);
-                if (bundleInfo == null) continue;
-
-                var bundlePath = Path.Combine(bundleInfo.DirectoryPath, bundleInfo.BundlePath);
-                if (!File.Exists(bundlePath)) continue;
-
-                var configContent = File.ReadAllText(infoFilePath);
-                var configHash = BundleHashInfo.CalculateStringHash(configContent);
-                var bundleHash = BundleHashInfo.CalculateFileHash(bundlePath);
-
-                var bundleKey = Path.GetFileName(modelBundleDir);
-                if (string.IsNullOrEmpty(bundleKey))
-                    bundleKey = modelBundleDir;
-
-                var needsReload = false;
-
-                if (BundleHashCache.TryGetValue(bundleKey, out var cachedHash))
+                try
                 {
-                    if (cachedHash.ConfigHash != configHash || cachedHash.BundleHash != bundleHash)
+                    var infoFilePath = Path.Combine(modelBundleDir, "bundleinfo.json");
+                    if (!File.Exists(infoFilePath)) continue;
+
+                    var bundleInfo = ModelBundleInfo.LoadFromDirectory(modelBundleDir);
+                    if (bundleInfo == null) continue;
+
+                    var bundlePath = Path.Combine(bundleInfo.DirectoryPath, bundleInfo.BundlePath);
+                    if (!File.Exists(bundlePath)) continue;
+
+                    var configContent = File.ReadAllText(infoFilePath);
+                    var configHash = BundleHashInfo.CalculateStringHash(configContent);
+                    var bundleHash = BundleHashInfo.CalculateFileHash(bundlePath);
+
+                    var bundleKey = Path.GetFileName(modelBundleDir);
+                    if (string.IsNullOrEmpty(bundleKey))
+                        bundleKey = modelBundleDir;
+
+                    var needsReload = false;
+
+                    if (BundleHashCache.TryGetValue(bundleKey, out var cachedHash))
+                    {
+                        if (cachedHash.ConfigHash != configHash || cachedHash.BundleHash != bundleHash)
+                        {
+                            needsReload = true;
+                            ModLogger.Log($"Bundle '{bundleInfo.BundleName}' changed, will reload");
+                        }
+                    }
+                    else
                     {
                         needsReload = true;
-                        ModLogger.Log($"Bundle '{bundleInfo.BundleName}' changed, will reload");
+                        ModLogger.Log($"New bundle '{bundleInfo.BundleName}' detected, will load");
                     }
-                }
-                else
-                {
-                    needsReload = true;
-                    ModLogger.Log($"New bundle '{bundleInfo.BundleName}' detected, will load");
-                }
 
-                if (needsReload)
-                {
-                    bundlesToReload.Add(bundleInfo.BundleName);
-                    bundlesToUnload.Add(bundleInfo.BundleName);
-                }
+                    if (needsReload)
+                    {
+                        bundlesToReload.Add(bundleInfo.BundleName);
+                        bundlesToUnload.Add(bundleInfo.BundleName);
+                    }
 
-                var hashInfo = new BundleHashInfo
+                    var hashInfo = new BundleHashInfo
+                    {
+                        BundleName = bundleInfo.BundleName,
+                        BundlePath = bundleInfo.BundlePath,
+                        BundleHash = bundleHash,
+                        ConfigHash = configHash,
+                        LastModified = File.GetLastWriteTime(bundlePath),
+                    };
+                    BundleHashCache[bundleKey] = hashInfo;
+                }
+                catch (Exception ex)
                 {
-                    BundleName = bundleInfo.BundleName,
-                    BundlePath = bundleInfo.BundlePath,
-                    BundleHash = bundleHash,
-                    ConfigHash = configHash,
-                    LastModified = File.GetLastWriteTime(bundlePath),
-                };
-                BundleHashCache[bundleKey] = hashInfo;
+                    ModLogger.LogError($"Error processing bundle directory '{modelBundleDir}': {ex.Message}");
+                    ModLogger.LogException(ex);
+                }
             }
 
             var existingBundles = ModelBundles.ToList();
@@ -118,26 +126,18 @@ namespace DuckovCustomModel.Managers
 
             foreach (var modelBundleDir in modelBundleDirectories)
             {
-                var bundleInfo = ModelBundleInfo.LoadFromDirectory(modelBundleDir);
-                if (bundleInfo == null) continue;
-
-                var bundleKey = bundleInfo.BundleName;
-                if (bundlesToReload.Contains(bundleKey))
+                try
                 {
-                    var existingBundle = ModelBundles.FirstOrDefault(b => b.BundleName == bundleKey);
-                    if (existingBundle != null)
-                        ModelBundles.Remove(existingBundle);
+                    var bundleInfo = ModelBundleInfo.LoadFromDirectory(modelBundleDir);
+                    if (bundleInfo == null) continue;
 
-                    foreach (var modelInfo in bundleInfo.Models)
-                        modelInfo.BundleName = bundleKey;
-
-                    ModelBundles.Add(bundleInfo);
-                }
-                else
-                {
-                    var existingBundle = ModelBundles.FirstOrDefault(b => b.BundleName == bundleKey);
-                    if (existingBundle == null)
+                    var bundleKey = bundleInfo.BundleName;
+                    if (bundlesToReload.Contains(bundleKey))
                     {
+                        var existingBundle = ModelBundles.FirstOrDefault(b => b.BundleName == bundleKey);
+                        if (existingBundle != null)
+                            ModelBundles.Remove(existingBundle);
+
                         foreach (var modelInfo in bundleInfo.Models)
                             modelInfo.BundleName = bundleKey;
 
@@ -145,9 +145,25 @@ namespace DuckovCustomModel.Managers
                     }
                     else
                     {
-                        foreach (var modelInfo in existingBundle.Models)
-                            modelInfo.BundleName = bundleKey;
+                        var existingBundle = ModelBundles.FirstOrDefault(b => b.BundleName == bundleKey);
+                        if (existingBundle == null)
+                        {
+                            foreach (var modelInfo in bundleInfo.Models)
+                                modelInfo.BundleName = bundleKey;
+
+                            ModelBundles.Add(bundleInfo);
+                        }
+                        else
+                        {
+                            foreach (var modelInfo in existingBundle.Models)
+                                modelInfo.BundleName = bundleKey;
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    ModLogger.LogError($"Error loading bundle from directory '{modelBundleDir}': {ex.Message}");
+                    ModLogger.LogException(ex);
                 }
             }
 

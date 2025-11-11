@@ -380,15 +380,26 @@ namespace DuckovCustomModel.UI.Components
             infoTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
             infoTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
 
-            if (hasError && !string.IsNullOrEmpty(errorMessage))
+            if (hasError)
             {
-                var errorText = UIFactory.CreateText("Error", contentArea.transform, $"⚠ {errorMessage}", 15,
-                    new(1f, 0.4f, 0.4f, 1), TextAnchor.UpperLeft, FontStyle.Bold);
-                var errorRect = errorText.GetComponent<RectTransform>();
-                errorRect.sizeDelta = new(0, 16);
+                var errorText = new GameObject("Error", typeof(Text), typeof(ContentSizeFitter));
+                errorText.transform.SetParent(contentArea.transform, false);
                 var errorTextComponent = errorText.GetComponent<Text>();
+                errorTextComponent.text = $"⚠ {(!string.IsNullOrEmpty(errorMessage) ? errorMessage : "Unknown error")}";
+                errorTextComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                errorTextComponent.fontSize = 15;
+                errorTextComponent.color = new(1f, 0.4f, 0.4f, 1);
+                errorTextComponent.alignment = TextAnchor.UpperLeft;
+                errorTextComponent.fontStyle = FontStyle.Bold;
                 errorTextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
-                errorTextComponent.verticalOverflow = VerticalWrapMode.Truncate;
+                errorTextComponent.verticalOverflow = VerticalWrapMode.Overflow;
+                var errorRect = errorText.GetComponent<RectTransform>();
+                errorRect.sizeDelta = new(0, 20);
+                var errorLayoutElement = errorText.AddComponent<LayoutElement>();
+                errorLayoutElement.minHeight = 20;
+                errorLayoutElement.flexibleHeight = 1;
+                var contentSizeFitter = errorText.GetComponent<ContentSizeFitter>();
+                contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             }
 
             if (!string.IsNullOrEmpty(model.Description))

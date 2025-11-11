@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using DuckovCustomModel;
 
 namespace DuckovCustomModel.Data
 {
@@ -17,12 +19,28 @@ namespace DuckovCustomModel.Data
         {
             var infoFilePath = Path.Combine(directoryPath, "bundleinfo.json");
             if (!File.Exists(infoFilePath)) return null;
-            var json = File.ReadAllText(infoFilePath);
-            var info = JsonConvert.DeserializeObject<ModelBundleInfo>(json, Constant.JsonSettings);
-            if (info == null) return info;
-            info.DirectoryPath = directoryPath;
-            info.Models = info.Models.Where(model => model.Validate()).ToArray();
-            return info;
+            
+            try
+            {
+                var json = File.ReadAllText(infoFilePath);
+                var info = JsonConvert.DeserializeObject<ModelBundleInfo>(json, Constant.JsonSettings);
+                if (info == null) return info;
+                info.DirectoryPath = directoryPath;
+                info.Models = info.Models.Where(model => model.Validate()).ToArray();
+                return info;
+            }
+            catch (JsonException ex)
+            {
+                ModLogger.LogError($"Failed to parse bundleinfo.json in '{directoryPath}': {ex.Message}");
+                ModLogger.LogException(ex);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Failed to load bundleinfo.json from '{directoryPath}': {ex.Message}");
+                ModLogger.LogException(ex);
+                return null;
+            }
         }
 
         public ModelBundleInfo CreateFilteredCopy(ModelInfo[] filteredModels)

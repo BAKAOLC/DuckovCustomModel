@@ -188,6 +188,11 @@ namespace DuckovCustomModel.Managers
             catch (OperationCanceledException)
             {
             }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Error during model list refresh: {ex.Message}");
+                ModLogger.LogException(ex);
+            }
             finally
             {
                 IsRefreshing = false;
