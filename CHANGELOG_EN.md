@@ -2,6 +2,10 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.7.8-fix1
+
+- Improved Harmony Patch application and removal mechanism, added fallback methods to improve fault tolerance, automatically tries fallback method when primary method fails
+
 ## v1.7.8
 
 - Added animator parameters window hotkey feature, can configure a hotkey in the settings interface to toggle the animator parameters window

@@ -97,18 +97,68 @@ namespace DuckovCustomModel
         {
             _harmony = new(Constant.HarmonyId);
 
-            var patchClassProcessors = AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly())
-                .Where(type => type.HasHarmonyAttribute())
-                .Select(_harmony.CreateClassProcessor);
+            return PatchAllInternalMethodA() || PatchAllInternalMethodB();
+        }
 
-            var successCount = 0;
-            var failCount = 0;
-            patchClassProcessors.DoIf(processor => string.IsNullOrEmpty(processor.Category),
-                delegate(PatchClassProcessor processor)
-                {
+        private bool UnpatchAll()
+        {
+            if (_harmony == null) return true;
+
+            return UnpatchAllInternalMethodA() || UnpatchAllInternalMethodB();
+        }
+
+        private bool PatchAllInternalMethodA()
+        {
+            try
+            {
+                if (_harmony == null) return false;
+                var patchClassProcessors = AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly())
+                    .Where(type => type.HasHarmonyAttribute())
+                    .Select(_harmony.CreateClassProcessor);
+
+                var successCount = 0;
+                var failCount = 0;
+                patchClassProcessors.DoIf(processor => string.IsNullOrEmpty(processor.Category),
+                    delegate(PatchClassProcessor processor)
+                    {
+                        try
+                        {
+                            processor.Patch();
+                            successCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            ModLogger.LogError(ex.ToString());
+                            failCount++;
+                        }
+                    });
+
+                if (successCount > 0)
+                    ModLogger.Log($"Applied {successCount} Harmony patch(es) successfully by method A");
+                if (failCount > 0)
+                    ModLogger.LogError($"Failed to apply {failCount} Harmony patch(es) by method A");
+
+                return successCount > 0;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Failed to apply Harmony patches by method A: {ex}");
+                throw;
+            }
+        }
+
+        private bool UnpatchAllInternalMethodA()
+        {
+            try
+            {
+                if (_harmony == null) return true;
+                var patchedMethods = _harmony.GetPatchedMethods().ToArray();
+                var successCount = 0;
+                var failCount = 0;
+                foreach (var method in patchedMethods)
                     try
                     {
-                        processor.Patch();
+                        _harmony.Unpatch(method, HarmonyPatchType.All, Constant.HarmonyId);
                         successCount++;
                     }
                     catch (Exception ex)
@@ -116,41 +166,51 @@ namespace DuckovCustomModel
                         ModLogger.LogError(ex.ToString());
                         failCount++;
                     }
-                });
 
-            if (successCount > 0)
-                ModLogger.Log($"Applied {successCount} Harmony patch(es) successfully");
-            if (failCount > 0)
-                ModLogger.LogError($"Failed to apply {failCount} Harmony patch(es)");
+                if (successCount > 0)
+                    ModLogger.Log($"Removed {successCount} Harmony patch(es) successfully by method A");
+                if (failCount > 0)
+                    ModLogger.LogError($"Failed to remove {failCount} Harmony patch(es) by method A");
 
-            return successCount > 0;
+                return failCount == 0;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Failed to remove Harmony patches by method A: {ex}");
+                throw;
+            }
         }
 
-        private bool UnpatchAll()
+        private bool PatchAllInternalMethodB()
         {
-            if (_harmony == null) return true;
+            try
+            {
+                if (_harmony == null) return false;
+                _harmony.PatchAll(Assembly.GetExecutingAssembly());
+                ModLogger.Log("Applied Harmony patches successfully by method B");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Failed to apply Harmony patches by method B: {ex}");
+                throw;
+            }
+        }
 
-            var patchedMethods = _harmony.GetPatchedMethods().ToArray();
-            var successCount = 0;
-            var failCount = 0;
-            foreach (var method in patchedMethods)
-                try
-                {
-                    _harmony.Unpatch(method, HarmonyPatchType.All, Constant.HarmonyId);
-                    successCount++;
-                }
-                catch (Exception ex)
-                {
-                    ModLogger.LogError(ex.ToString());
-                    failCount++;
-                }
-
-            if (successCount > 0)
-                ModLogger.Log($"Removed {successCount} Harmony patch(es) successfully");
-            if (failCount > 0)
-                ModLogger.LogError($"Failed to remove {failCount} Harmony patch(es)");
-
-            return failCount == 0;
+        private bool UnpatchAllInternalMethodB()
+        {
+            try
+            {
+                if (_harmony == null) return true;
+                _harmony.UnpatchAll(Constant.HarmonyId);
+                ModLogger.Log("Removed Harmony patches successfully by method B");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ModLogger.LogError($"Failed to remove Harmony patches by method B: {ex}");
+                throw;
+            }
         }
 
         private void LoadConfig()
