@@ -10,22 +10,32 @@ namespace DuckovCustomModel.UI.Tabs
 {
     public class SettingsTab : Base.UIPanel
     {
+        private GameObject? _animatorParamsKeyButton;
         private Toggle? _animatorParamsToggle;
         private Dropdown? _dcmButtonAnchorDropdown;
         private InputField? _dcmButtonOffsetXInput;
         private InputField? _dcmButtonOffsetYInput;
+        private bool _isWaitingForAnimatorParamsKeyInput;
+
+        private bool _isWaitingForUIKeyInput;
         private GameObject? _keyButton;
 
         private int _settingRowIndex;
         private Toggle? _showDCMButtonToggle;
 
-        public bool IsWaitingForKeyInput { get; private set; }
-
         private static UIConfig? UIConfig => ModBehaviour.Instance?.UIConfig;
+
+        public bool IsWaitingForKeyInput => _isWaitingForUIKeyInput || _isWaitingForAnimatorParamsKeyInput;
 
         private void Update()
         {
-            if (IsWaitingForKeyInput) HandleKeyInputCapture();
+            if (_isWaitingForUIKeyInput || _isWaitingForAnimatorParamsKeyInput) HandleKeyInputCapture();
+        }
+
+        public void RefreshAnimatorParamsToggleState(bool visible)
+        {
+            if (_animatorParamsToggle == null) return;
+            if (_animatorParamsToggle.isOn != visible) _animatorParamsToggle.isOn = visible;
         }
 
         public event Action<bool>? OnAnimatorParamsToggleChanged;
@@ -69,6 +79,7 @@ namespace DuckovCustomModel.UI.Tabs
             sizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             BuildKeySetting(contentArea);
+            BuildAnimatorParamsKeySetting(contentArea);
             BuildAnimatorParamsToggle(contentArea);
             BuildShowDCMButtonToggle(contentArea);
             BuildDCMButtonPositionSettings(contentArea);
@@ -94,9 +105,43 @@ namespace DuckovCustomModel.UI.Tabs
                 TextAnchor.MiddleCenter);
             UIFactory.SetupButtonText(keyButtonText);
             UIFactory.SetLocalizedText(keyButtonText, () =>
-                IsWaitingForKeyInput
+                _isWaitingForUIKeyInput
                     ? Localization.PressAnyKey
                     : GetKeyCodeDisplayName(UIConfig?.ToggleKey ?? KeyCode.Backslash));
+        }
+
+        private void BuildAnimatorParamsKeySetting(GameObject parent)
+        {
+            var row = CreateSettingRow(parent);
+
+            var keyLabel = UIFactory.CreateText("KeyLabel", row.transform,
+                Localization.AnimatorParamsHotkey, 18, Color.white);
+            UIFactory.SetupLeftLabel(keyLabel);
+            UIFactory.SetupContentSizeFitter(keyLabel);
+            UIFactory.SetLocalizedText(keyLabel, () => Localization.AnimatorParamsHotkey);
+
+            var keyButton = UIFactory.CreateButton("KeyButton", row.transform, OnAnimatorParamsKeyButtonClicked,
+                new(0.2f, 0.2f, 0.2f, 1));
+            _animatorParamsKeyButton = keyButton;
+            UIFactory.SetupRightControl(keyButton, new(100, 30));
+
+            var clearButton = UIFactory.CreateButton("ClearButton", row.transform, OnAnimatorParamsClearButtonClicked,
+                new(0.3f, 0.2f, 0.2f, 1));
+            UIFactory.SetupRightControl(clearButton, new(60, 30), -20f - 100f - 8f);
+
+            var clearButtonText = UIFactory.CreateText("Text", clearButton.transform,
+                Localization.Clear, 16, Color.white, TextAnchor.MiddleCenter);
+            UIFactory.SetupButtonText(clearButtonText);
+            UIFactory.SetLocalizedText(clearButtonText, () => Localization.Clear);
+
+            var keyButtonText = UIFactory.CreateText("Text", keyButton.transform,
+                GetKeyCodeDisplayName(UIConfig?.AnimatorParamsToggleKey ?? KeyCode.None), 18, Color.white,
+                TextAnchor.MiddleCenter);
+            UIFactory.SetupButtonText(keyButtonText);
+            UIFactory.SetLocalizedText(keyButtonText, () =>
+                _isWaitingForAnimatorParamsKeyInput
+                    ? Localization.PressAnyKey
+                    : GetKeyCodeDisplayName(UIConfig?.AnimatorParamsToggleKey ?? KeyCode.None));
         }
 
         private void BuildAnimatorParamsToggle(GameObject parent)
@@ -352,29 +397,76 @@ namespace DuckovCustomModel.UI.Tabs
         private void OnKeyButtonClicked()
         {
             if (UIConfig == null) return;
-            IsWaitingForKeyInput = true;
+            _isWaitingForUIKeyInput = true;
+            _isWaitingForAnimatorParamsKeyInput = false;
             if (_keyButton == null) return;
             var textObj = _keyButton.transform.Find("Text");
             if (textObj == null) return;
             var localizedText = textObj.GetComponent<LocalizedText>();
             if (localizedText != null)
                 localizedText.RefreshText();
+            if (_animatorParamsKeyButton == null) return;
+            var animatorParamsTextObj = _animatorParamsKeyButton.transform.Find("Text");
+            if (animatorParamsTextObj == null) return;
+            var animatorParamsLocalizedText = animatorParamsTextObj.GetComponent<LocalizedText>();
+            animatorParamsLocalizedText?.RefreshText();
+        }
+
+        private void OnAnimatorParamsKeyButtonClicked()
+        {
+            if (UIConfig == null) return;
+            _isWaitingForAnimatorParamsKeyInput = true;
+            _isWaitingForUIKeyInput = false;
+            if (_animatorParamsKeyButton == null) return;
+            var textObj = _animatorParamsKeyButton.transform.Find("Text");
+            if (textObj == null) return;
+            var localizedText = textObj.GetComponent<LocalizedText>();
+            if (localizedText != null)
+                localizedText.RefreshText();
+            if (_keyButton == null) return;
+            var keyTextObj = _keyButton.transform.Find("Text");
+            if (keyTextObj == null) return;
+            var keyLocalizedText = keyTextObj.GetComponent<LocalizedText>();
+            keyLocalizedText?.RefreshText();
+        }
+
+        private void OnAnimatorParamsClearButtonClicked()
+        {
+            if (UIConfig == null) return;
+            UIConfig.AnimatorParamsToggleKey = KeyCode.None;
+            ConfigManager.SaveConfigToFile(UIConfig, "UIConfig.json");
+            if (_animatorParamsKeyButton == null) return;
+            var textObj = _animatorParamsKeyButton.transform.Find("Text");
+            if (textObj == null) return;
+            var localizedText = textObj.GetComponent<LocalizedText>();
+            localizedText?.RefreshText();
         }
 
         private void HandleKeyInputCapture()
         {
-            if (!IsWaitingForKeyInput || UIConfig == null) return;
+            if ((!_isWaitingForUIKeyInput && !_isWaitingForAnimatorParamsKeyInput) || UIConfig == null) return;
 
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                IsWaitingForKeyInput = false;
-                if (_keyButton == null) return;
-                var textObj = _keyButton.transform.Find("Text");
-                if (textObj == null) return;
-                var localizedText = textObj.GetComponent<LocalizedText>();
-                if (localizedText != null)
-                    localizedText.RefreshText();
+                _isWaitingForUIKeyInput = false;
+                _isWaitingForAnimatorParamsKeyInput = false;
+                if (_keyButton != null)
+                {
+                    var textObj = _keyButton.transform.Find("Text");
+                    if (textObj != null)
+                    {
+                        var localizedText = textObj.GetComponent<LocalizedText>();
+                        localizedText?.RefreshText();
+                    }
+                }
 
+                if (_animatorParamsKeyButton == null) return;
+                {
+                    var textObj = _animatorParamsKeyButton.transform.Find("Text");
+                    if (textObj == null) return;
+                    var localizedText = textObj.GetComponent<LocalizedText>();
+                    localizedText?.RefreshText();
+                }
                 return;
             }
 
@@ -385,15 +477,28 @@ namespace DuckovCustomModel.UI.Tabs
                         or KeyCode.Mouse4 or KeyCode.Mouse5 or KeyCode.Mouse6)
                         continue;
 
-                    UIConfig.ToggleKey = keyCode;
-                    ConfigManager.SaveConfigToFile(UIConfig, "UIConfig.json");
-                    IsWaitingForKeyInput = false;
-                    if (_keyButton == null) return;
-                    var textObj = _keyButton.transform.Find("Text");
-                    if (textObj == null) return;
-                    var localizedText = textObj.GetComponent<LocalizedText>();
-                    if (localizedText != null)
-                        localizedText.RefreshText();
+                    if (_isWaitingForUIKeyInput)
+                    {
+                        UIConfig.ToggleKey = keyCode;
+                        ConfigManager.SaveConfigToFile(UIConfig, "UIConfig.json");
+                        _isWaitingForUIKeyInput = false;
+                        if (_keyButton == null) return;
+                        var textObj = _keyButton.transform.Find("Text");
+                        if (textObj == null) return;
+                        var localizedText = textObj.GetComponent<LocalizedText>();
+                        localizedText?.RefreshText();
+                    }
+                    else if (_isWaitingForAnimatorParamsKeyInput)
+                    {
+                        UIConfig.AnimatorParamsToggleKey = keyCode;
+                        ConfigManager.SaveConfigToFile(UIConfig, "UIConfig.json");
+                        _isWaitingForAnimatorParamsKeyInput = false;
+                        if (_animatorParamsKeyButton == null) return;
+                        var textObj = _animatorParamsKeyButton.transform.Find("Text");
+                        if (textObj == null) return;
+                        var localizedText = textObj.GetComponent<LocalizedText>();
+                        localizedText?.RefreshText();
+                    }
 
                     return;
                 }
@@ -401,6 +506,7 @@ namespace DuckovCustomModel.UI.Tabs
 
         private static string GetKeyCodeDisplayName(KeyCode keyCode)
         {
+            if (keyCode == KeyCode.None) return Localization.None;
             return keyCode switch
             {
                 KeyCode.Alpha0 => "0",

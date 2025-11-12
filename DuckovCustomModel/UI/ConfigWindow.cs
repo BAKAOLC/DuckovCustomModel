@@ -93,6 +93,13 @@ namespace DuckovCustomModel.UI
                     ShowPanel();
             }
 
+            if (uiConfig.AnimatorParamsToggleKey != KeyCode.None &&
+                Input.GetKeyDown(uiConfig.AnimatorParamsToggleKey))
+            {
+                _showAnimatorParamsWindow = !_showAnimatorParamsWindow;
+                _settingsTab?.RefreshAnimatorParamsToggleState(_showAnimatorParamsWindow);
+            }
+
             if (_uiActive && Input.GetKeyDown(KeyCode.Escape)) HidePanel();
 
             if (!_uiActive) return;

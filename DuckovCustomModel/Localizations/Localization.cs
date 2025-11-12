@@ -34,6 +34,9 @@ namespace DuckovCustomModel.Localizations
             { "HideCharacterEquipment", "Hide Character Equipment" },
             { "HidePetEquipment", "Hide Pet Equipment" },
             { "Hotkey", "Hotkey" },
+            { "AnimatorParamsHotkey", "Animator Parameters Hotkey" },
+            { "None", "None" },
+            { "Clear", "Clear" },
             { "PressAnyKey", "Press any key..." },
             { "NoPreview", "No Preview" },
             { "Author", "Author" },
@@ -88,6 +91,9 @@ namespace DuckovCustomModel.Localizations
         public static string HideCharacterEquipment => GetText("HideCharacterEquipment");
         public static string HidePetEquipment => GetText("HidePetEquipment");
         public static string Hotkey => GetText("Hotkey");
+        public static string AnimatorParamsHotkey => GetText("AnimatorParamsHotkey");
+        public static string None => GetText("None");
+        public static string Clear => GetText("Clear");
         public static string PressAnyKey => GetText("PressAnyKey");
         public static string NoPreview => GetText("NoPreview");
         public static string Author => GetText("Author");
