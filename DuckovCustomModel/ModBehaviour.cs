@@ -95,35 +95,62 @@ namespace DuckovCustomModel
 
         private bool PatchAll()
         {
-            try
-            {
-                _harmony = new(Constant.HarmonyId);
-                _harmony.PatchAll(Assembly.GetExecutingAssembly());
-                ModLogger.Log("Successfully applied Harmony patches");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ModLogger.LogError($"Unable to apply Harmony patches: {ex}");
-                return false;
-            }
+            _harmony = new(Constant.HarmonyId);
+
+            var patchClassProcessors = AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly())
+                .Where(type => type.HasHarmonyAttribute())
+                .Select(_harmony.CreateClassProcessor);
+
+            var successCount = 0;
+            var failCount = 0;
+            patchClassProcessors.DoIf(processor => string.IsNullOrEmpty(processor.Category),
+                delegate(PatchClassProcessor processor)
+                {
+                    try
+                    {
+                        processor.Patch();
+                        successCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        ModLogger.LogError(ex.ToString());
+                        failCount++;
+                    }
+                });
+
+            if (successCount > 0)
+                ModLogger.Log($"Applied {successCount} Harmony patch(es) successfully");
+            if (failCount > 0)
+                ModLogger.LogError($"Failed to apply {failCount} Harmony patch(es)");
+
+            return successCount > 0;
         }
 
         private bool UnpatchAll()
         {
-            try
-            {
-                if (_harmony == null) return true;
-                _harmony.UnpatchAll(_harmony.Id);
-                _harmony = null;
-                ModLogger.Log("Harmony patches removed successfully");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ModLogger.LogError($"Unable to remove Harmony patches: {ex}");
-                return false;
-            }
+            if (_harmony == null) return true;
+
+            var patchedMethods = _harmony.GetPatchedMethods().ToArray();
+            var successCount = 0;
+            var failCount = 0;
+            foreach (var method in patchedMethods)
+                try
+                {
+                    _harmony.Unpatch(method, HarmonyPatchType.All, Constant.HarmonyId);
+                    successCount++;
+                }
+                catch (Exception ex)
+                {
+                    ModLogger.LogError(ex.ToString());
+                    failCount++;
+                }
+
+            if (successCount > 0)
+                ModLogger.Log($"Removed {successCount} Harmony patch(es) successfully");
+            if (failCount > 0)
+                ModLogger.LogError($"Failed to remove {failCount} Harmony patch(es)");
+
+            return failCount == 0;
         }
 
         private void LoadConfig()
