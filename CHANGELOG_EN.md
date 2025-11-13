@@ -2,6 +2,12 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.7.10
+
+- Added target switching feature to animator parameters window, can switch between viewing character's own or pet's animator parameters within the window
+- Default view is character's own, can switch using two side-by-side buttons (Character/Pet)
+- Automatically clears parameter state when switching targets, recalculating parameter changes from scratch
+
 ## v1.7.9
 
 - Fixed issue where ModConfigs directory could not be created in read-only environments (such as macOS), causing functionality to fail

@@ -21,10 +21,11 @@ namespace DuckovCustomModel.UI
     public class ConfigWindow : MonoBehaviour
     {
         private const float AnimatorParamsWindowWidth = 700f;
-        private const float AnimatorParamsWindowHeight = 1000f;
+        private const float AnimatorParamsWindowHeight = 900f;
         private readonly Dictionary<int, bool> _paramIsChanging = new();
         private readonly Dictionary<int, object> _paramPreviousValues = new();
         private Vector2 _animatorParamsScrollPosition;
+        private bool _animatorParamsViewingPet;
         private Rect _animatorParamsWindowRect = new(10, 10, 600, 1000);
 
         private CharacterInputControl? _charInput;
@@ -122,7 +123,7 @@ namespace DuckovCustomModel.UI
             if (!_showAnimatorParamsWindow) return;
 
             UpdateModelHandlers();
-            var currentHandler = _modelHandler;
+            var currentHandler = _animatorParamsViewingPet ? _petModelHandler : _modelHandler;
             if (currentHandler == null) return;
 
             var customAnimatorControl = currentHandler.CustomAnimatorControl;
@@ -414,7 +415,7 @@ namespace DuckovCustomModel.UI
 
         private void DrawAnimatorParamsWindow(int windowID)
         {
-            var currentHandler = _modelHandler;
+            var currentHandler = _animatorParamsViewingPet ? _petModelHandler : _modelHandler;
             if (currentHandler == null) return;
 
             var customAnimatorControl = currentHandler.CustomAnimatorControl;
@@ -424,9 +425,35 @@ namespace DuckovCustomModel.UI
 
             GUILayout.BeginArea(new(10, 30, AnimatorParamsWindowWidth - 20, AnimatorParamsWindowHeight - 40));
 
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"{Localization.TargetType}: ", GUILayout.Width(80));
+
+            var characterButtonStyle = _animatorParamsViewingPet ? GUI.skin.button : GUI.skin.box;
+            if (GUILayout.Button(Localization.TargetCharacter, characterButtonStyle, GUILayout.Width(100)))
+                if (_animatorParamsViewingPet)
+                {
+                    _paramIsChanging.Clear();
+                    _paramPreviousValues.Clear();
+                    _animatorParamsViewingPet = false;
+                }
+
+            var petButtonStyle = _animatorParamsViewingPet ? GUI.skin.box : GUI.skin.button;
+            if (GUILayout.Button(Localization.TargetPet, petButtonStyle, GUILayout.Width(100)))
+                if (!_animatorParamsViewingPet && _petModelHandler != null)
+                {
+                    _paramIsChanging.Clear();
+                    _paramPreviousValues.Clear();
+                    _animatorParamsViewingPet = true;
+                }
+
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(5);
+
             _animatorParamsScrollPosition = GUILayout.BeginScrollView(_animatorParamsScrollPosition,
                 _scrollViewStyle, GUILayout.Width(AnimatorParamsWindowWidth - 20),
-                GUILayout.Height(AnimatorParamsWindowHeight - 40));
+                GUILayout.Height(AnimatorParamsWindowHeight - 80));
 
             var paramInfos = GetCustomAnimatorParams();
             for (var i = 0; i < paramInfos.Count; i += 2)
