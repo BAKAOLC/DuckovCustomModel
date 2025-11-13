@@ -1,13 +1,12 @@
 ﻿using System;
 using System.IO;
 using DuckovCustomModel.Configs;
-using UnityEngine;
 
 namespace DuckovCustomModel.Managers
 {
     public static class ConfigManager
     {
-        public static string ConfigBaseDirectory => $"{Application.dataPath}/../ModConfigs/{Constant.ModID}";
+        public static string ConfigBaseDirectory => ModPathManager.GetModConfigDirectory(Constant.ModID);
 
         public static void CreateDirectoryIfNotExists()
         {

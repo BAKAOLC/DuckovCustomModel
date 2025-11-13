@@ -2,6 +2,11 @@
 
 [English](CHANGELOG_EN.md) | 中文
 
+## v1.7.9
+
+- 修复了在只读环境（如 macOS）下 ModConfigs 目录无法创建导致功能失效的问题
+- 当安装目录为只读时，自动切换到游戏存档的上一级目录的 ModConfigs（Windows: `AppData\LocalLow\TeamSoda\Duckov\ModConfigs`，macOS/Linux: 对应的用户数据目录）
+
 ## v1.7.8-fix2
 
 - 改进了 Harmony Patch 的应用和移除机制，增加了备用方法以提高容错性，当主方法失败时会自动尝试备用方法

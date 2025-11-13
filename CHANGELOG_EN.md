@@ -2,6 +2,11 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.7.9
+
+- Fixed issue where ModConfigs directory could not be created in read-only environments (such as macOS), causing functionality to fail
+- When the installation directory is read-only, automatically switches to ModConfigs in the parent directory of the game save directory (Windows: `AppData\LocalLow\TeamSoda\Duckov\ModConfigs`, macOS/Linux: corresponding user data directory)
+
 ## v1.7.8-fix2
 
 - Improved Harmony Patch application and removal mechanism, added fallback methods to improve fault tolerance, automatically tries fallback method when primary method fails

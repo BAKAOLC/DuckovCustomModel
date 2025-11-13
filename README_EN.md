@@ -20,6 +20,8 @@ A custom player model mod for Duckov game.
 
 Configuration files are located at: `<Game Installation Path>/ModConfigs/DuckovCustomModel`
 
+**Note**: If the game installation directory is read-only (such as certain installation methods on macOS), the mod will automatically switch the configuration file path to ModConfigs in the parent directory of the game save directory (Windows: `AppData\LocalLow\TeamSoda\Duckov\ModConfigs\DuckovCustomModel`, macOS/Linux: corresponding user data directory). The mod will automatically detect and handle this situation without manual configuration.
+
 ### UIConfig.json
 
 UI interface related configuration.
@@ -283,6 +285,8 @@ The model selection interface provides the following features:
 ## Model Installation
 
 Place model bundles at: `<Game Installation Path>/ModConfigs/DuckovCustomModel/Models`
+
+**Note**: If the game installation directory is read-only, the mod will automatically switch the model path to ModConfigs in the parent directory of the game save directory (Windows: `AppData\LocalLow\TeamSoda\Duckov\ModConfigs\DuckovCustomModel\Models`, macOS/Linux: corresponding user data directory). The mod will automatically detect and handle this situation without manual configuration.
 
 Each model bundle should be placed in a separate folder, containing model resource files and configuration information.
 

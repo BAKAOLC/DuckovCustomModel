@@ -20,6 +20,8 @@
 
 配置文件位于：`游戏安装路径/ModConfigs/DuckovCustomModel`
 
+**注意**：如果游戏安装目录为只读环境（如 macOS 上的某些安装方式），模组会自动将配置文件路径切换到游戏存档的上一级目录的 ModConfigs（Windows: `AppData\LocalLow\TeamSoda\Duckov\ModConfigs\DuckovCustomModel`，macOS/Linux: 对应的用户数据目录）。模组会自动检测并处理这种情况，无需手动配置。
+
 ### UIConfig.json
 
 UI 界面相关配置。
@@ -283,6 +285,8 @@ UI 界面相关配置。
 ## 模型安装
 
 将模型包放置在：`游戏安装路径/ModConfigs/DuckovCustomModel/Models`
+
+**注意**：如果游戏安装目录为只读环境，模组会自动将模型路径切换到游戏存档的上一级目录的 ModConfigs（Windows: `AppData\LocalLow\TeamSoda\Duckov\ModConfigs\DuckovCustomModel\Models`，macOS/Linux: 对应的用户数据目录）。模组会自动检测并处理这种情况，无需手动配置。
 
 每个模型包应放在独立的文件夹中，包含模型资源文件和配置信息。
 
