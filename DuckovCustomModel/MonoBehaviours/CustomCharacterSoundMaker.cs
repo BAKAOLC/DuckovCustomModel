@@ -2,49 +2,73 @@
 
 namespace DuckovCustomModel.MonoBehaviours
 {
-    public class CustomCharacterSoundMaker : CharacterSoundMaker
+    public class CustomCharacterSoundMaker : MonoBehaviour
     {
+        public CharacterMainControl? characterMainControl;
         public float customMoveSoundTimer;
-        public float customWalkSoundFrequency = 4;
-        public float customRunSoundFrequency = 7;
+        public float moveSoundTimer;
+        public CharacterSoundMaker? originalCharacterSoundMaker;
+        private float? _customRunSoundFrequency;
+        private float? _customWalkSoundFrequency;
 
-        public bool SkipSound => characterMainControl.IsInAdsInput || !characterMainControl.CharacterItem;
+        public float WalkSoundFrequency =>
+            originalCharacterSoundMaker == null ? 4f : originalCharacterSoundMaker.walkSoundFrequence;
 
-        public float OriginalSoundFrequency => characterMainControl.Running ? runSoundFrequence : walkSoundFrequence;
+        public float RunSoundFrequency =>
+            originalCharacterSoundMaker == null ? 7f : originalCharacterSoundMaker.runSoundFrequence;
 
-        public float CustomSoundFrequency =>
-            characterMainControl.Running ? customRunSoundFrequency : customWalkSoundFrequency;
+        public float WalkSoundDistance =>
+            originalCharacterSoundMaker == null ? 0f : originalCharacterSoundMaker.walkSoundDistance;
 
-        public bool IsHeavy =>
-            (double)characterMainControl.CharacterItem.TotalWeight / characterMainControl.MaxWeight >= 0.75f;
+        public float RunSoundDistance =>
+            originalCharacterSoundMaker == null ? 0f : originalCharacterSoundMaker.runSoundDistance;
 
-        public float SoundRadius
+        public bool SkipSound => characterMainControl == null || characterMainControl.IsInAdsInput ||
+                                 !characterMainControl.CharacterItem;
+
+        public float OriginalSoundFrequency => characterMainControl == null || characterMainControl.Running
+            ? RunSoundFrequency
+            : WalkSoundFrequency;
+
+        public float CustomWalkSoundFrequency
+        {
+            get => _customWalkSoundFrequency ?? WalkSoundFrequency;
+            set => _customWalkSoundFrequency = value;
+        }
+
+        public float CustomRunSoundFrequency
+        {
+            get => _customRunSoundFrequency ?? RunSoundFrequency;
+            set => _customRunSoundFrequency = value;
+        }
+
+        public float CustomSoundFrequency => characterMainControl == null || characterMainControl.Running
+            ? CustomRunSoundFrequency
+            : CustomWalkSoundFrequency;
+
+        public bool IsHeavy => characterMainControl != null &&
+                               characterMainControl.CharacterItem.TotalWeight /
+                               (double)characterMainControl.MaxWeight >= 0.75;
+
+        public CharacterSoundMaker.FootStepTypes FootStepSoundTypes
         {
             get
             {
-                var isHeavy = IsHeavy;
+                if (characterMainControl == null)
+                    return CharacterSoundMaker.FootStepTypes.walkLight;
                 if (characterMainControl.Running)
-                {
-                    if (runSoundDistance <= 0f) return 0f;
-                    return runSoundDistance * (isHeavy ? 1.5f : 1f);
-                }
-
-                if (walkSoundDistance <= 0f) return 0f;
-                return walkSoundDistance * (isHeavy ? 1.5f : 1f);
+                    return IsHeavy
+                        ? CharacterSoundMaker.FootStepTypes.runHeavy
+                        : CharacterSoundMaker.FootStepTypes.runLight;
+                return IsHeavy
+                    ? CharacterSoundMaker.FootStepTypes.walkHeavy
+                    : CharacterSoundMaker.FootStepTypes.walkLight;
             }
         }
 
-        public FootStepTypes FootStepSoundTypes
+        public void Update()
         {
-            get
-            {
-                if (characterMainControl.Running) return IsHeavy ? FootStepTypes.runHeavy : FootStepTypes.runLight;
-                return IsHeavy ? FootStepTypes.walkHeavy : FootStepTypes.walkLight;
-            }
-        }
-
-        public new void Update()
-        {
+            if (characterMainControl == null) return;
             if (characterMainControl.movementControl.Velocity.magnitude < 0.5)
             {
                 moveSoundTimer = 0.0f;
@@ -61,9 +85,11 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private void UpdateAIBrain()
         {
-            if (!(moveSoundTimer >= 1.0 / OriginalSoundFrequency)) return;
+            if (moveSoundTimer < 1.0 / OriginalSoundFrequency) return;
             moveSoundTimer = 0.0f;
             if (SkipSound) return;
+            if (characterMainControl == null) return;
+
             var sound = new AISound
             {
                 pos = transform.position,
@@ -71,18 +97,38 @@ namespace DuckovCustomModel.MonoBehaviours
                 soundType = SoundTypes.unknowNoise,
                 fromObject = characterMainControl.gameObject,
                 fromCharacter = characterMainControl,
-                radius = SoundRadius,
             };
+            var isHeavy = IsHeavy;
+            if (characterMainControl.Running)
+            {
+                if (RunSoundDistance > 0.0) sound.radius = RunSoundDistance * (isHeavy ? 1.5f : 1f);
+            }
+            else if (WalkSoundDistance > 0.0)
+            {
+                sound.radius = WalkSoundDistance * (isHeavy ? 1.5f : 1f);
+            }
+
             AIMainBrain.MakeSound(sound);
         }
 
         private void UpdateFootStepSound()
         {
-            if (!(customMoveSoundTimer >= 1.0 / CustomSoundFrequency)) return;
+            if (customMoveSoundTimer < 1.0 / CustomSoundFrequency) return;
             customMoveSoundTimer = 0.0f;
             if (SkipSound) return;
-            var onFootStepSound = OnFootStepSound;
-            onFootStepSound?.Invoke(transform.position, FootStepSoundTypes, characterMainControl);
+            if (characterMainControl == null) return;
+
+            if (characterMainControl.Running)
+            {
+                if (!(RunSoundDistance > 0.0)) return;
+                var onFootStepSound = CharacterSoundMaker.OnFootStepSound;
+                onFootStepSound?.Invoke(transform.position, FootStepSoundTypes, characterMainControl);
+            }
+            else if (WalkSoundDistance > 0.0)
+            {
+                var onFootStepSound = CharacterSoundMaker.OnFootStepSound;
+                onFootStepSound?.Invoke(transform.position, FootStepSoundTypes, characterMainControl);
+            }
         }
     }
 }

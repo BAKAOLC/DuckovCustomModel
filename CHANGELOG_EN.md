@@ -5,8 +5,8 @@ English | [中文](CHANGELOG.md)
 ## v1.7.11
 
 - Added footstep sound frequency configuration feature, supports configuring walk and run footstep trigger frequency per model in `bundleinfo.json`
-- Added `WalkSoundFrequency` field (optional), used to configure footstep trigger frequency per second when walking (default: `4`)
-- Added `RunSoundFrequency` field (optional), used to configure footstep trigger frequency per second when running (default: `7`)
+- Added `WalkSoundFrequency` field (optional), used to configure footstep trigger frequency per second when walking (if not specified, will automatically use the original character's walk footstep frequency setting)
+- Added `RunSoundFrequency` field (optional), used to configure footstep trigger frequency per second when running (if not specified, will automatically use the original character's run footstep frequency setting)
 
 ## v1.7.10
 

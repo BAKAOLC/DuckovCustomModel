@@ -769,14 +769,21 @@ namespace DuckovCustomModel.MonoBehaviours
             {
                 soundMaker = CustomModelInstance.gameObject.AddComponent<CustomCharacterSoundMaker>();
                 soundMaker.characterMainControl = CharacterMainControl;
+
+                var originalSoundMaker = CharacterMainControl.GetComponent<CharacterSoundMaker>();
+                if (originalSoundMaker != null)
+                {
+                    soundMaker.characterMainControl = originalSoundMaker.characterMainControl;
+                    soundMaker.originalCharacterSoundMaker = originalSoundMaker;
+                }
             }
 
             if (modelInfo != null)
             {
                 if (modelInfo.WalkSoundFrequency.HasValue)
-                    soundMaker.customWalkSoundFrequency = modelInfo.WalkSoundFrequency.Value;
+                    soundMaker.CustomWalkSoundFrequency = modelInfo.WalkSoundFrequency.Value;
                 if (modelInfo.RunSoundFrequency.HasValue)
-                    soundMaker.customRunSoundFrequency = modelInfo.RunSoundFrequency.Value;
+                    soundMaker.CustomRunSoundFrequency = modelInfo.RunSoundFrequency.Value;
             }
 
             _customCharacterSoundMaker = soundMaker;
