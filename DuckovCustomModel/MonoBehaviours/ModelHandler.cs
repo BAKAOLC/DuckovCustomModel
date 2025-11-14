@@ -762,11 +762,14 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private void InitializeCustomCharacterSoundMaker(ModelInfo? modelInfo = null)
         {
-            if (CharacterMainControl == null) return;
+            if (CharacterMainControl == null || CustomModelInstance == null) return;
 
-            var soundMaker = CharacterMainControl.GetComponent<CustomCharacterSoundMaker>();
+            var soundMaker = CustomModelInstance.GetComponent<CustomCharacterSoundMaker>();
             if (soundMaker == null)
-                soundMaker = CharacterMainControl.gameObject.AddComponent<CustomCharacterSoundMaker>();
+            {
+                soundMaker = CustomModelInstance.gameObject.AddComponent<CustomCharacterSoundMaker>();
+                soundMaker.characterMainControl = CharacterMainControl;
+            }
 
             if (modelInfo != null)
             {
