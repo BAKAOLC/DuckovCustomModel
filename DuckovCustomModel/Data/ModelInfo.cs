@@ -27,6 +27,10 @@ namespace DuckovCustomModel.Data
 
         public string[] Features { get; set; } = [];
 
+        public float? WalkSoundFrequency { get; set; }
+
+        public float? RunSoundFrequency { get; set; }
+
         public bool Validate()
         {
             if (string.IsNullOrWhiteSpace(ModelID)) return false;

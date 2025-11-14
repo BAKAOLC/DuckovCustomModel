@@ -95,14 +95,17 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (modelHandler == null) return;
 
-            if (_initialized && _modelHandler == modelHandler)
-                return;
-
-            if (_initialized)
+            switch (_initialized)
             {
-                if (_characterModel != null) _characterModel.OnAttackOrShootEvent -= OnAttack;
-                if (_characterMainControl != null) _characterMainControl.OnHoldAgentChanged -= OnHoldAgentChanged;
-                UnsubscribeGunEvents();
+                case true when _modelHandler == modelHandler:
+                    return;
+                case true:
+                {
+                    if (_characterModel != null) _characterModel.OnAttackOrShootEvent -= OnAttack;
+                    if (_characterMainControl != null) _characterMainControl.OnHoldAgentChanged -= OnHoldAgentChanged;
+                    UnsubscribeGunEvents();
+                    break;
+                }
             }
 
             _modelHandler = modelHandler;

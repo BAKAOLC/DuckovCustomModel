@@ -28,18 +28,20 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private ModelBundleInfo? _currentModelBundleInfo;
         private ModelInfo? _currentModelInfo;
+        private CustomCharacterSoundMaker? _customCharacterSoundMaker;
         private CharacterSubVisuals? _customModelSubVisuals;
         private GameObject? _deathLootBoxPrefab;
         private GameObject? _headColliderObject;
 
         private float _nextIdleAudioTime;
-        private GameObject? _originalModelOcclusionBody;
 
         private bool ReplaceShader => _currentModelInfo is not { Features: { Length: > 0 } }
                                       || !_currentModelInfo.Features.Contains(ModelFeatures.NoAutoShaderReplace);
 
         public CharacterMainControl? CharacterMainControl { get; private set; }
         public CharacterModel? OriginalCharacterModel { get; private set; }
+        public GameObject? OriginalModelOcclusionBody { get; private set; }
+        public CharacterSoundMaker? OriginalCharacterSoundMaker { get; private set; }
         public CharacterAnimationControl? OriginalAnimationControl { get; private set; }
         public CharacterAnimationControl_MagicBlend? OriginalMagicBlendAnimationControl { get; private set; }
         public Movement? OriginalMovement { get; private set; }
@@ -195,6 +197,7 @@ namespace DuckovCustomModel.MonoBehaviours
             RecordOriginalModelSockets();
             RecordOriginalModelOcclusionBody();
             RecordOriginalHeadCollider();
+            RecordOriginalSoundMaker();
 
             ModLogger.Log("ModelHandler initialized successfully.");
             IsInitialized = true;
@@ -295,6 +298,9 @@ namespace DuckovCustomModel.MonoBehaviours
             RestoreToOriginalModelSockets();
             UpdateColliderHeight();
 
+            if (OriginalCharacterSoundMaker != null)
+                OriginalCharacterSoundMaker.enabled = true;
+
             var customFaceInstance = GetOriginalCustomFaceInstance();
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(true);
             if (CustomModelInstance != null) CustomModelInstance.SetActive(false);
@@ -374,6 +380,9 @@ namespace DuckovCustomModel.MonoBehaviours
 
             ChangeToCustomModelSockets();
             UpdateColliderHeight();
+
+            if (OriginalCharacterSoundMaker != null)
+                OriginalCharacterSoundMaker.enabled = false;
 
             var customFaceInstance = GetOriginalCustomFaceInstance();
             if (customFaceInstance != null) customFaceInstance.gameObject.SetActive(false);
@@ -464,6 +473,7 @@ namespace DuckovCustomModel.MonoBehaviours
 
             SetShowBackMaterial();
             InitializeCustomCharacterSubVisuals();
+            InitializeCustomCharacterSoundMaker(modelInfo);
 
             // Get the Animator component from the custom model
             CustomAnimator = CustomModelInstance.GetComponent<Animator>();
@@ -549,7 +559,7 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private void RecordOriginalModelOcclusionBody()
         {
-            if (_originalModelOcclusionBody != null) return;
+            if (OriginalModelOcclusionBody != null) return;
 
             var originalCustomFaceInstance = GetOriginalCustomFaceInstance();
             if (originalCustomFaceInstance == null) return;
@@ -557,7 +567,7 @@ namespace DuckovCustomModel.MonoBehaviours
             var originalDuckBody = originalCustomFaceInstance.Find("DuckBody");
             if (originalDuckBody == null) return;
 
-            _originalModelOcclusionBody = originalDuckBody.gameObject;
+            OriginalModelOcclusionBody = originalDuckBody.gameObject;
         }
 
         private void RecordOriginalHeadCollider()
@@ -574,6 +584,18 @@ namespace DuckovCustomModel.MonoBehaviours
 
             if (headCollider.gameObject.GetComponent<DontHideAsEquipment>() != null) return;
             headCollider.gameObject.AddComponent<DontHideAsEquipment>();
+        }
+
+        private void RecordOriginalSoundMaker()
+        {
+            if (OriginalCharacterSoundMaker != null) return;
+
+            if (CharacterMainControl == null) return;
+
+            var soundMaker = CharacterMainControl.GetComponent<CharacterSoundMaker>();
+            if (soundMaker == null) return;
+
+            OriginalCharacterSoundMaker = soundMaker;
         }
 
         private void UpdateColliderHeight()
@@ -693,10 +715,10 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private void SetShowBackMaterial()
         {
-            if (_originalModelOcclusionBody == null) return;
+            if (OriginalModelOcclusionBody == null) return;
 
             var originalSkinnedMeshRenderer =
-                _originalModelOcclusionBody.GetComponent<SkinnedMeshRenderer>();
+                OriginalModelOcclusionBody.GetComponent<SkinnedMeshRenderer>();
             if (originalSkinnedMeshRenderer == null) return;
 
             var characterShowBackShader = GameCharacterShowBackShader;
@@ -736,6 +758,25 @@ namespace DuckovCustomModel.MonoBehaviours
 
             _customModelSubVisuals = subVisuals;
             _customModelSubVisuals.SetRenderers();
+        }
+
+        private void InitializeCustomCharacterSoundMaker(ModelInfo? modelInfo = null)
+        {
+            if (CharacterMainControl == null) return;
+
+            var soundMaker = CharacterMainControl.GetComponent<CustomCharacterSoundMaker>();
+            if (soundMaker == null)
+                soundMaker = CharacterMainControl.gameObject.AddComponent<CustomCharacterSoundMaker>();
+
+            if (modelInfo != null)
+            {
+                if (modelInfo.WalkSoundFrequency.HasValue)
+                    soundMaker.customWalkSoundFrequency = modelInfo.WalkSoundFrequency.Value;
+                if (modelInfo.RunSoundFrequency.HasValue)
+                    soundMaker.customRunSoundFrequency = modelInfo.RunSoundFrequency.Value;
+            }
+
+            _customCharacterSoundMaker = soundMaker;
         }
 
         private static string GetEffectiveAICharacterConfigKey(string nameKey)
