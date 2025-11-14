@@ -1,0 +1,12 @@
+# 要了解有关 Dependabot 版本更新的更多信息，请访问：
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # 启用 .NET 依赖项的版本更新
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
