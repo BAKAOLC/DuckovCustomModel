@@ -2,6 +2,10 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+registries:
+  github:
+    type: nuget-feed
+    url: https://nuget.pkg.github.com/Duckov-Custom-Model/index.json
 updates:
   # 启用 .NET 依赖项的版本更新
   - package-ecosystem: "nuget"
@@ -9,4 +13,6 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    registries:
+      - github
 
