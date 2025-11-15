@@ -3,7 +3,7 @@
 
 version: 2
 registries:
-  github:
+  Duckov-Custom-Model:
     type: nuget-feed
     url: https://nuget.pkg.github.com/Duckov-Custom-Model/index.json
 updates:
@@ -14,5 +14,5 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 10
     registries:
-      - github
+      - Duckov-Custom-Model
 
