@@ -11,6 +11,7 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+      packages: read
     
     steps:
     - uses: actions/checkout@v4
@@ -19,6 +20,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.x'
+    
+    - name: Configure NuGet authentication
+      run: dotnet nuget update source Duckov-Custom-Model --username Duckov-Custom-Model --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text
     
     - name: Restore dependencies
       run: dotnet restore
