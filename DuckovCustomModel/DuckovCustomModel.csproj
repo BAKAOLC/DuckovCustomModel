@@ -69,7 +69,7 @@
         </None>
     </ItemGroup>
 
-    <Target Name="PackageRelease" BeforeTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release'"
+    <Target Name="PackageRelease" BeforeTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release' AND '$(CI)' != 'true' AND '$(GITHUB_ACTIONS)' != 'true'"
             Inputs="$(OutputPath)**\*;$(MSBuildProjectDirectory)\info.ini"
             Outputs="$([System.IO.Path]::Combine($([System.IO.Path]::GetFullPath($(OutputPath)..\)), '$(AssemblyName).zip'))">
         <PropertyGroup>
