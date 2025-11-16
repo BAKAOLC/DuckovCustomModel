@@ -38,25 +38,46 @@ jobs:
     
     - name: Create Release Package
       run: |
-        cd DuckovCustomModel
-        dotnet build --configuration Release --no-restore
-      continue-on-error: false
-      env:
-        CI: true
-        GITHUB_ACTIONS: true
+        $outputPath = "DuckovCustomModel/bin/Release/netstandard2.1"
+        $packageDir = "DuckovCustomModel/bin/Release/PackageTemp"
+        $zipPath = "DuckovCustomModel/bin/Release/DuckovCustomModel.zip"
+        
+        # 创建临时打包目录
+        New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+        
+        # 复制所有文件到打包目录（排除 preview.png）
+        Get-ChildItem -Path $outputPath -Recurse -File | Where-Object { $_.Name -ne 'preview.png' } | ForEach-Object {
+          $relativePath = $_.FullName.Substring((Resolve-Path $outputPath).Path.Length).TrimStart('\', '/')
+          $destPath = Join-Path $packageDir $relativePath
+          $destDir = Split-Path $destPath -Parent
+          if (-not (Test-Path $destDir)) {
+            New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+          }
+          Copy-Item $_.FullName -Destination $destPath -Force
+        }
+        
+        # 创建 ZIP 文件
+        if (Test-Path $zipPath) {
+          Remove-Item $zipPath -Force
+        }
+        Compress-Archive -Path (Join-Path $packageDir '*') -DestinationPath $zipPath -Force
+        
+        # 清理临时目录
+        Remove-Item -Path $packageDir -Recurse -Force
+      shell: pwsh
     
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: release-package
         path: |
-          DuckovCustomModel/bin/Release/*.zip
+          DuckovCustomModel/bin/Release/DuckovCustomModel.zip
         retention-days: 30
     
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        files: DuckovCustomModel/bin/Release/*.zip
+        files: DuckovCustomModel/bin/Release/DuckovCustomModel.zip
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
