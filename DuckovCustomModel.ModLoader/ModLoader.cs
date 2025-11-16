@@ -106,7 +106,7 @@ namespace DuckovCustomModel
 
         private static void InvokeModEntryMethodInitialize()
         {
-            InvokeModEntryMethod("Initialize");
+            InvokeModEntryMethod("Initialize", [_modDirectory]);
         }
 
         private static void InvokeModEntryMethodUninitialize()
@@ -114,7 +114,7 @@ namespace DuckovCustomModel
             InvokeModEntryMethod("Uninitialize");
         }
 
-        private static void InvokeModEntryMethod(string methodName)
+        private static void InvokeModEntryMethod(string methodName, object?[]? parameters = null)
         {
             if (_loadedAssembly == null)
             {
@@ -129,7 +129,20 @@ namespace DuckovCustomModel
                 return;
             }
 
-            var method = modEntryType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+            MethodInfo? method;
+            if (parameters != null)
+            {
+                var parameterTypes = new Type[parameters.Length];
+                for (var i = 0; i < parameters.Length; i++)
+                    parameterTypes[i] = parameters[i]?.GetType() ?? typeof(object);
+                method = modEntryType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static, null,
+                    parameterTypes, null);
+            }
+            else
+            {
+                method = modEntryType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+            }
+
             if (method == null)
             {
                 ModLogger.LogError($"ModEntry.{methodName} method not found.");
@@ -138,7 +151,7 @@ namespace DuckovCustomModel
 
             try
             {
-                method.Invoke(null, null);
+                method.Invoke(null, parameters);
                 ModLogger.Log($"ModEntry.{methodName} invoked successfully.");
             }
             catch (Exception ex)

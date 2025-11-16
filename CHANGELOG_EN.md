@@ -2,6 +2,10 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.8.0-fix1
+
+- Fixed issue where multilingual loading failed due to changes in loading method
+
 ## v1.8.0
 
 - Split some logic into different assemblies to facilitate future SDK development

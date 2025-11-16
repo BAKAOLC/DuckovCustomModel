@@ -19,7 +19,7 @@ namespace DuckovCustomModel.Localizations
         {
             get
             {
-                var dllPath = Path.GetDirectoryName(typeof(Localization).Assembly.Location);
+                var dllPath = ModEntry.ModDirectory ?? Path.GetDirectoryName(typeof(Localization).Assembly.Location);
                 return Path.Combine(dllPath ?? string.Empty, "Localizations");
             }
         }

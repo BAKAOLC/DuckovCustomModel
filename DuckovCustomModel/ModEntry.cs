@@ -26,7 +26,9 @@ namespace DuckovCustomModel
 
         private static bool _initialized;
 
-        public static void Initialize()
+        public static string? ModDirectory { get; private set; }
+
+        public static void Initialize(string modDirectory)
         {
             if (_initialized)
             {
@@ -34,6 +36,7 @@ namespace DuckovCustomModel
                 return;
             }
 
+            ModDirectory = modDirectory;
             ModLogger.Log($"Initializing {Constant.ModName}...");
 
             _initialized = true;
