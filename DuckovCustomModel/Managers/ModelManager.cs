@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.MonoBehaviours;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -28,13 +29,12 @@ namespace DuckovCustomModel.Managers
             var bundlesToReload = new HashSet<string>();
 
             foreach (var modelBundleDir in modelBundleDirectories)
-            {
                 try
                 {
                     var infoFilePath = Path.Combine(modelBundleDir, "bundleinfo.json");
                     if (!File.Exists(infoFilePath)) continue;
 
-                    var bundleInfo = ModelBundleInfo.LoadFromDirectory(modelBundleDir);
+                    var bundleInfo = ModelBundleInfo.LoadFromDirectory(modelBundleDir, JsonSettings.Default);
                     if (bundleInfo == null) continue;
 
                     var bundlePath = Path.Combine(bundleInfo.DirectoryPath, bundleInfo.BundlePath);
@@ -85,7 +85,6 @@ namespace DuckovCustomModel.Managers
                     ModLogger.LogError($"Error processing bundle directory '{modelBundleDir}': {ex.Message}");
                     ModLogger.LogException(ex);
                 }
-            }
 
             var existingBundles = ModelBundles.ToList();
             foreach (var existingBundle in existingBundles)
@@ -112,7 +111,7 @@ namespace DuckovCustomModel.Managers
                     foreach (var handler in handlers)
                     {
                         if (!handler.IsHiddenOriginalModel) continue;
-                        var modelID = ModBehaviour.Instance?.UsingModel?.GetModelID(target) ?? string.Empty;
+                        var modelID = ModEntry.UsingModel?.GetModelID(target) ?? string.Empty;
                         if (string.IsNullOrEmpty(modelID)) continue;
                         if (!FindModelByID(modelID, out var currentBundleInfo, out _)) continue;
                         if (currentBundleInfo.BundleName == bundleKey)
@@ -125,10 +124,9 @@ namespace DuckovCustomModel.Managers
             }
 
             foreach (var modelBundleDir in modelBundleDirectories)
-            {
                 try
                 {
-                    var bundleInfo = ModelBundleInfo.LoadFromDirectory(modelBundleDir);
+                    var bundleInfo = ModelBundleInfo.LoadFromDirectory(modelBundleDir, JsonSettings.Default);
                     if (bundleInfo == null) continue;
 
                     var bundleKey = bundleInfo.BundleName;
@@ -165,7 +163,6 @@ namespace DuckovCustomModel.Managers
                     ModLogger.LogError($"Error loading bundle from directory '{modelBundleDir}': {ex.Message}");
                     ModLogger.LogException(ex);
                 }
-            }
 
             CheckDuplicateModelIDs();
 

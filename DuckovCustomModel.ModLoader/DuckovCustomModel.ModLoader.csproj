@@ -4,6 +4,8 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <RootNamespace>DuckovCustomModel</RootNamespace>
+    <AssemblyName>DuckovCustomModel</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -28,15 +30,6 @@
     <Reference Include="$(DuckovPath)\Duckov_Data\Managed\Unity*">
       <Private>False</Private>
     </Reference>
-    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\Newtonsoft.Json.dll">
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="info.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

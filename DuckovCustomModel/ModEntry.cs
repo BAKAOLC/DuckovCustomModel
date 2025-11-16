@@ -3,42 +3,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using DuckovCustomModel.Configs;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.Localizations;
 using DuckovCustomModel.Managers;
 using DuckovCustomModel.UI;
 using HarmonyLib;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DuckovCustomModel
 {
     // ReSharper disable MemberCanBeMadeStatic.Local
-    public class ModBehaviour : Duckov.Modding.ModBehaviour
+    public static class ModEntry
     {
-        public static ModBehaviour? Instance;
-        private ConfigWindow? _configWindow;
-        private Harmony? _harmony;
-        public HideEquipmentConfig? HideEquipmentConfig;
-        public IdleAudioConfig? IdleAudioConfig;
-        public ModelAudioConfig? ModelAudioConfig;
-        public UIConfig? UIConfig;
-        public UsingModel? UsingModel;
+        private static ConfigWindow? _configWindow;
+        private static Harmony? _harmony;
+        public static HideEquipmentConfig? HideEquipmentConfig;
+        public static IdleAudioConfig? IdleAudioConfig;
+        public static ModelAudioConfig? ModelAudioConfig;
+        public static UIConfig? UIConfig;
+        public static UsingModel? UsingModel;
 
-        private void Awake()
+        private static bool _initialized;
+
+        public static void Initialize()
         {
-            if (Instance != null)
+            if (_initialized)
             {
-                ModLogger.LogError("Multiple instances of ModBehaviour detected! There should only be one instance.");
-                Destroy(this);
+                ModLogger.LogWarning($"{Constant.ModName} is already initialized.");
                 return;
             }
 
-            Instance = this;
-            ModLogger.Log($"{Constant.ModName} loaded (Version {Constant.ModVersion})");
-        }
+            ModLogger.Log($"Initializing {Constant.ModName}...");
 
-        private void OnEnable()
-        {
+            _initialized = true;
+
             LoadConfig();
 
             var patched = PatchAll();
@@ -61,10 +60,20 @@ namespace DuckovCustomModel
             ModelListManager.RefreshModelList(priorityModelIDs);
 
             InitializeConfigWindow();
+
+            ModLogger.Log($"{Constant.ModName} loaded (Version {Constant.ModVersion})");
         }
 
-        private void OnDisable()
+        public static void Uninitialize()
         {
+            if (!_initialized)
+            {
+                ModLogger.LogWarning($"{Constant.ModName} is not initialized.");
+                return;
+            }
+
+            ModLogger.Log($"Unloading {Constant.ModName}...");
+
             UnloadConfig();
 
             var unpatched = UnpatchAll();
@@ -78,36 +87,32 @@ namespace DuckovCustomModel
 
             Localization.Cleanup();
 
-            if (_configWindow == null) return;
-            Destroy(_configWindow.gameObject);
-            _configWindow = null;
+            if (_configWindow != null)
+            {
+                Object.Destroy(_configWindow.gameObject);
+                _configWindow = null;
+            }
+
+            _initialized = false;
+
+            ModLogger.Log($"{Constant.ModName} unloaded.");
         }
 
-        private void OnDestroy()
-        {
-            Instance = null;
-            UnloadConfig();
-
-            var unpatched = UnpatchAll();
-            if (!unpatched)
-                ModLogger.LogError("Unable to remove Harmony patches, the mod may not unload correctly.");
-        }
-
-        private bool PatchAll()
+        private static bool PatchAll()
         {
             _harmony = new(Constant.HarmonyId);
 
             return PatchAllInternalMethodA() || PatchAllInternalMethodB();
         }
 
-        private bool UnpatchAll()
+        private static bool UnpatchAll()
         {
             if (_harmony == null) return true;
 
             return UnpatchAllInternalMethodA() || UnpatchAllInternalMethodB();
         }
 
-        private bool PatchAllInternalMethodA()
+        private static bool PatchAllInternalMethodA()
         {
             try
             {
@@ -147,7 +152,7 @@ namespace DuckovCustomModel
             }
         }
 
-        private bool UnpatchAllInternalMethodA()
+        private static bool UnpatchAllInternalMethodA()
         {
             try
             {
@@ -181,7 +186,7 @@ namespace DuckovCustomModel
             }
         }
 
-        private bool PatchAllInternalMethodB()
+        private static bool PatchAllInternalMethodB()
         {
             try
             {
@@ -197,7 +202,7 @@ namespace DuckovCustomModel
             }
         }
 
-        private bool UnpatchAllInternalMethodB()
+        private static bool UnpatchAllInternalMethodB()
         {
             try
             {
@@ -213,7 +218,7 @@ namespace DuckovCustomModel
             }
         }
 
-        private void LoadConfig()
+        private static void LoadConfig()
         {
             UIConfig = ConfigManager.LoadConfigFromFile<UIConfig>("UIConfig.json");
             if (UIConfig.Validate()) ConfigManager.SaveConfigToFile(UIConfig, "UIConfig.json");
@@ -236,7 +241,7 @@ namespace DuckovCustomModel
             ModLogger.Log("Configuration files loaded successfully");
         }
 
-        private void UnloadConfig()
+        private static void UnloadConfig()
         {
             UIConfig = null;
             UsingModel = null;
@@ -245,7 +250,7 @@ namespace DuckovCustomModel
             ModelAudioConfig = null;
         }
 
-        private void LevelManager_OnLevelBeginInitializing()
+        private static void LevelManager_OnLevelBeginInitializing()
         {
             var priorityModelIDs = new List<string>();
             if (UsingModel != null)
@@ -275,7 +280,7 @@ namespace DuckovCustomModel
             ModelListManager.RefreshModelList(priorityModelIDs);
         }
 
-        private void LevelManager_OnLevelInitialized()
+        private static void LevelManager_OnLevelInitialized()
         {
             var mainCharacterControl = LevelManager.Instance.MainCharacter;
             var petCharacterControl = LevelManager.Instance.PetCharacter;
@@ -283,22 +288,22 @@ namespace DuckovCustomModel
             InitializeModelHandlerToCharacter(petCharacterControl, "PetCharacter", ModelTarget.Pet);
         }
 
-        private void LevelManager_OnAfterLevelInitialized()
+        private static void LevelManager_OnAfterLevelInitialized()
         {
             ModelListManager.ApplyAllModelsFromConfig();
         }
 
-        private void InitializeConfigWindow()
+        private static void InitializeConfigWindow()
         {
             if (_configWindow != null) return;
 
             var uiObject = new GameObject("ConfigWindow");
             _configWindow = uiObject.AddComponent<ConfigWindow>();
-            DontDestroyOnLoad(uiObject);
+            Object.DontDestroyOnLoad(uiObject);
             ModLogger.Log("ConfigWindow initialized.");
         }
 
-        private void InitializeModelHandlerToCharacter(CharacterMainControl characterMainControl,
+        private static void InitializeModelHandlerToCharacter(CharacterMainControl characterMainControl,
             string characterName, ModelTarget target = ModelTarget.Character)
         {
             if (characterMainControl == null)

@@ -1,101 +1,142 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>DuckovCustomModel</RootNamespace>
+    <AssemblyName>DuckovCustomModel.GameModules</AssemblyName>
+    <PackageName>DuckovCustomModel</PackageName>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DuckovPath>E:\SteamLibrary\steamapps\common\Escape from Duckov</DuckovPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <UseGameLibsFromNuGet Condition="'$(CI)' == 'true' OR '$(GITHUB_ACTIONS)' == 'true' OR '$(UseGameLibsFromNuGet)' == 'true'">true</UseGameLibsFromNuGet>
+    <UseGameLibsFromNuGet Condition="'$(UseGameLibsFromNuGet)' == ''">false</UseGameLibsFromNuGet>
+  </PropertyGroup>
+
+  <!-- CI 环境使用 NuGet 包 -->
+  <ItemGroup Condition="'$(UseGameLibsFromNuGet)' == 'true'">
+    <PackageReference Include="DuckovGameLibs" Version="1.1.6-Steam"/>
+  </ItemGroup>
+
+  <!-- 本地开发使用游戏目录 -->
+  <ItemGroup Condition="'$(UseGameLibsFromNuGet)' == 'false'">
+    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\TeamSoda.*">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\ItemStatsSystem.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\SodaLocalization.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\Unity*">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\FMODUnity.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\UniTask.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\Newtonsoft.Json.dll">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Publicize Include="TeamSoda.Duckov.Core" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Lib.Harmony" Version="2.4.1">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="info.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Localizations\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Localizations\%(Filename)%(Extension)</TargetPath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DuckovCustomModel.Core\DuckovCustomModel.Core.csproj"/>
+    <ProjectReference Include="..\DuckovCustomModel.ModLoader\DuckovCustomModel.ModLoader.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="BuildModLoader" BeforeTargets="BeforeBuild">
+    <MSBuild Projects="..\DuckovCustomModel.ModLoader\DuckovCustomModel.ModLoader.csproj"
+             Properties="Configuration=$(Configuration);Platform=$(Platform)"
+             Targets="Build"/>
+  </Target>
+
+  <Target Name="CopyModLoaderOutput" AfterTargets="Build">
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
-        <Nullable>enable</Nullable>
-        <LangVersion>latest</LangVersion>
+      <ModLoaderProjectDir>$([System.IO.Path]::GetFullPath($(MSBuildProjectDirectory)\..\DuckovCustomModel.ModLoader))</ModLoaderProjectDir>
+      <ModLoaderOutputPath>$([System.IO.Path]::Combine($(ModLoaderProjectDir), 'bin', '$(Configuration)', 'netstandard2.1'))</ModLoaderOutputPath>
     </PropertyGroup>
 
+    <Message Text="复制 ModLoader 编译结果到输出目录..." Importance="normal"/>
+    <Message Text="ModLoader 输出路径: $(ModLoaderOutputPath)" Importance="normal"/>
+    <Message Text="目标输出路径: $(OutputPath)" Importance="normal"/>
+
+    <ItemGroup Condition="Exists('$(ModLoaderOutputPath)')">
+      <ModLoaderFiles Include="$(ModLoaderOutputPath)\*.dll;$(ModLoaderOutputPath)\*.pdb"/>
+    </ItemGroup>
+
+    <Copy SourceFiles="@(ModLoaderFiles)"
+          DestinationFolder="$(OutputPath)"
+          SkipUnchangedFiles="false"
+          Condition="'@(ModLoaderFiles)' != ''">
+      <Output TaskParameter="CopiedFiles" ItemName="CopiedModLoaderFiles"/>
+    </Copy>
+
+    <Message Text="已复制 ModLoader 文件: @(CopiedModLoaderFiles)" Importance="normal" Condition="'@(CopiedModLoaderFiles)' != ''"/>
+    <Warning Text="未找到 ModLoader 输出文件。请确保 ModLoader 项目已成功构建。" Condition="!Exists('$(ModLoaderOutputPath)')"/>
+  </Target>
+
+  <Target Name="PackageRelease" BeforeTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release' AND '$(CI)' != 'true' AND '$(GITHUB_ACTIONS)' != 'true'"
+          Inputs="$(OutputPath)**\*"
+          Outputs="$([System.IO.Path]::Combine($([System.IO.Path]::GetFullPath($(OutputPath)..\)), '$(AssemblyName).zip'))">
     <PropertyGroup>
-        <DuckovPath>E:\SteamLibrary\steamapps\common\Escape from Duckov</DuckovPath>
+      <AssemblyName Condition="'$(AssemblyName)' == ''">$(MSBuildProjectName)</AssemblyName>
+      <ParentOutputPath>$([System.IO.Path]::GetFullPath($(OutputPath)..\))</ParentOutputPath>
+      <PackageDir>$([System.IO.Path]::Combine($(ParentOutputPath), 'PackageTemp'))</PackageDir>
+      <ZipFileName>$(PackageName).zip</ZipFileName>
+      <ZipPath>$([System.IO.Path]::Combine($(ParentOutputPath), $(ZipFileName)))</ZipPath>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <UseGameLibsFromNuGet Condition="'$(CI)' == 'true' OR '$(GITHUB_ACTIONS)' == 'true' OR '$(UseGameLibsFromNuGet)' == 'true'">true</UseGameLibsFromNuGet>
-        <UseGameLibsFromNuGet Condition="'$(UseGameLibsFromNuGet)' == ''">false</UseGameLibsFromNuGet>
-    </PropertyGroup>
+    <Message Text="开始打包 Release 版本..." Importance="high"/>
+    <Message Text="输出目录: $(OutputPath)" Importance="normal"/>
+    <Message Text="父目录: $(ParentOutputPath)" Importance="normal"/>
+    <Message Text="打包目录: $(PackageDir)" Importance="normal"/>
+    <Message Text="ZIP 文件: $(ZipPath)" Importance="normal"/>
 
-    <!-- CI 环境使用 NuGet 包 -->
-    <ItemGroup Condition="'$(UseGameLibsFromNuGet)' == 'true'">
-        <PackageReference Include="DuckovGameLibs" Version="1.1.6-Steam" />
-    </ItemGroup>
+    <MakeDir Directories="$(PackageDir)"/>
 
-    <!-- 本地开发使用游戏目录 -->
-    <ItemGroup Condition="'$(UseGameLibsFromNuGet)' == 'false'">
-        <Reference Include="$(DuckovPath)\Duckov_Data\Managed\TeamSoda.*">
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="$(DuckovPath)\Duckov_Data\Managed\ItemStatsSystem.dll">
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="$(DuckovPath)\Duckov_Data\Managed\SodaLocalization.dll">
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="$(DuckovPath)\Duckov_Data\Managed\Unity*">
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="$(DuckovPath)\Duckov_Data\Managed\FMODUnity.dll">
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="$(DuckovPath)\Duckov_Data\Managed\UniTask.dll">
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="$(DuckovPath)\Duckov_Data\Managed\Newtonsoft.Json.dll">
-            <Private>False</Private>
-        </Reference>
-    </ItemGroup>
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$outputPath = [System.IO.Path]::GetFullPath('$(OutputPath)'); $packageDir = [System.IO.Path]::GetFullPath('$(PackageDir)'); Get-ChildItem -Path $outputPath -Recurse -File | Where-Object { $_.Name -ne 'preview.png' } | ForEach-Object { $relativePath = $_.FullName.Substring($outputPath.Length).TrimStart('\', '/'); $destPath = Join-Path $packageDir $relativePath; $destDir = Split-Path $destPath -Parent; if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }; Copy-Item $_.FullName -Destination $destPath -Force }&quot;"/>
 
-    <ItemGroup>
-        <Publicize Include="TeamSoda.Duckov.Core" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false"/>
-    </ItemGroup>
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$zipPath = [System.IO.Path]::GetFullPath('$(ZipPath)'); $packageDir = [System.IO.Path]::GetFullPath('$(PackageDir)'); if (Test-Path $zipPath) { Remove-Item $zipPath -Force }; Compress-Archive -Path (Join-Path $packageDir '*') -DestinationPath $zipPath -Force&quot;"/>
 
-    <ItemGroup>
-        <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Lib.Harmony" Version="2.4.1">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-    </ItemGroup>
+    <RemoveDir Directories="$(PackageDir)"/>
 
-    <ItemGroup>
-        <None Update="info.ini">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Localizations\*.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>Localizations\%(Filename)%(Extension)</TargetPath>
-        </None>
-    </ItemGroup>
-
-    <Target Name="PackageRelease" BeforeTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release' AND '$(CI)' != 'true' AND '$(GITHUB_ACTIONS)' != 'true'"
-            Inputs="$(OutputPath)**\*;$(MSBuildProjectDirectory)\info.ini"
-            Outputs="$([System.IO.Path]::Combine($([System.IO.Path]::GetFullPath($(OutputPath)..\)), '$(AssemblyName).zip'))">
-        <PropertyGroup>
-            <AssemblyName Condition="'$(AssemblyName)' == ''">$(MSBuildProjectName)</AssemblyName>
-            <ParentOutputPath>$([System.IO.Path]::GetFullPath($(OutputPath)..\))</ParentOutputPath>
-            <PackageDir>$([System.IO.Path]::Combine($(ParentOutputPath), 'PackageTemp'))</PackageDir>
-            <ZipFileName>$(AssemblyName).zip</ZipFileName>
-            <ZipPath>$([System.IO.Path]::Combine($(ParentOutputPath), $(ZipFileName)))</ZipPath>
-            <SourceInfoIni>$(MSBuildProjectDirectory)\info.ini</SourceInfoIni>
-        </PropertyGroup>
-
-        <Message Text="开始打包 Release 版本..." Importance="high"/>
-        <Message Text="输出目录: $(OutputPath)" Importance="normal"/>
-        <Message Text="父目录: $(ParentOutputPath)" Importance="normal"/>
-        <Message Text="打包目录: $(PackageDir)" Importance="normal"/>
-        <Message Text="ZIP 文件: $(ZipPath)" Importance="normal"/>
-
-        <MakeDir Directories="$(PackageDir)"/>
-
-        <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$outputPath = [System.IO.Path]::GetFullPath('$(OutputPath)'); $packageDir = [System.IO.Path]::GetFullPath('$(PackageDir)'); $sourceInfoIni = [System.IO.Path]::GetFullPath('$(SourceInfoIni)'); Get-ChildItem -Path $outputPath -Recurse -File | Where-Object { $_.Name -ne 'info.ini' -and $_.Name -ne 'preview.png' } | ForEach-Object { $relativePath = $_.FullName.Substring($outputPath.Length).TrimStart('\', '/'); $destPath = Join-Path $packageDir $relativePath; $destDir = Split-Path $destPath -Parent; if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }; Copy-Item $_.FullName -Destination $destPath -Force }; if (Test-Path $sourceInfoIni) { Copy-Item $sourceInfoIni -Destination $packageDir -Force }&quot;"/>
-
-        <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$zipPath = [System.IO.Path]::GetFullPath('$(ZipPath)'); $packageDir = [System.IO.Path]::GetFullPath('$(PackageDir)'); if (Test-Path $zipPath) { Remove-Item $zipPath -Force }; Compress-Archive -Path (Join-Path $packageDir '*') -DestinationPath $zipPath -Force&quot;"/>
-
-        <RemoveDir Directories="$(PackageDir)"/>
-
-        <Message Text="打包完成: $(ZipPath)" Importance="high"/>
-    </Target>
+    <Message Text="打包完成: $(ZipPath)" Importance="high"/>
+  </Target>
 
 </Project>

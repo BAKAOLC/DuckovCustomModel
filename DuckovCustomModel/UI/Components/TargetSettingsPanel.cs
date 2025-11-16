@@ -1,5 +1,5 @@
 using DuckovCustomModel.Configs;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.Localizations;
 using DuckovCustomModel.Managers;
 using DuckovCustomModel.UI.Base;
@@ -60,7 +60,7 @@ namespace DuckovCustomModel.UI.Components
             if (_content == null || _currentTarget == null) return;
 
             var settingRow = CreateSettingRow();
-            var hideEquipmentConfig = ModBehaviour.Instance?.HideEquipmentConfig;
+            var hideEquipmentConfig = ModEntry.HideEquipmentConfig;
 
             var label = UIFactory.CreateText("Label", settingRow.transform,
                 _currentTarget.TargetType == ModelTarget.AICharacter && _currentTarget.AICharacterNameKey != null
@@ -103,7 +103,7 @@ namespace DuckovCustomModel.UI.Components
             if (_content == null || _currentTarget == null) return;
 
             var settingRow = CreateSettingRow();
-            var modelAudioConfig = ModBehaviour.Instance?.ModelAudioConfig;
+            var modelAudioConfig = ModEntry.ModelAudioConfig;
 
             var label = UIFactory.CreateText("Label", settingRow.transform, Localization.EnableModelAudio, 18,
                 Color.white);
@@ -132,7 +132,7 @@ namespace DuckovCustomModel.UI.Components
             if (_content == null || _currentTarget == null) return;
 
             var settingRow = CreateSettingRow();
-            var idleAudioConfig = ModBehaviour.Instance?.IdleAudioConfig;
+            var idleAudioConfig = ModEntry.IdleAudioConfig;
 
             var label = UIFactory.CreateText("Label", settingRow.transform, Localization.EnableIdleAudio, 18,
                 Color.white);
@@ -160,7 +160,7 @@ namespace DuckovCustomModel.UI.Components
         {
             if (_content == null || _currentTarget == null) return;
 
-            var idleAudioConfig = ModBehaviour.Instance?.IdleAudioConfig;
+            var idleAudioConfig = ModEntry.IdleAudioConfig;
             if (idleAudioConfig == null) return;
 
             IdleAudioInterval interval;
@@ -228,7 +228,7 @@ namespace DuckovCustomModel.UI.Components
         {
             if (_currentTarget == null) return;
 
-            var hideEquipmentConfig = ModBehaviour.Instance?.HideEquipmentConfig;
+            var hideEquipmentConfig = ModEntry.HideEquipmentConfig;
             if (hideEquipmentConfig == null) return;
 
             if (_currentTarget.TargetType == ModelTarget.AICharacter && _currentTarget.AICharacterNameKey != null)
@@ -247,7 +247,7 @@ namespace DuckovCustomModel.UI.Components
         {
             if (_currentTarget == null) return;
 
-            var modelAudioConfig = ModBehaviour.Instance?.ModelAudioConfig;
+            var modelAudioConfig = ModEntry.ModelAudioConfig;
             if (modelAudioConfig == null) return;
 
             if (_currentTarget.TargetType == ModelTarget.AICharacter && _currentTarget.AICharacterNameKey != null)
@@ -266,7 +266,7 @@ namespace DuckovCustomModel.UI.Components
         {
             if (_currentTarget == null) return;
 
-            var idleAudioConfig = ModBehaviour.Instance?.IdleAudioConfig;
+            var idleAudioConfig = ModEntry.IdleAudioConfig;
             if (idleAudioConfig == null) return;
 
             if (_currentTarget.TargetType == ModelTarget.AICharacter && _currentTarget.AICharacterNameKey != null)
@@ -285,7 +285,7 @@ namespace DuckovCustomModel.UI.Components
         {
             if (_currentTarget == null) return;
 
-            var idleAudioConfig = ModBehaviour.Instance?.IdleAudioConfig;
+            var idleAudioConfig = ModEntry.IdleAudioConfig;
             if (idleAudioConfig == null) return;
 
             if (!float.TryParse(value, out var minValue)) return;
@@ -311,7 +311,7 @@ namespace DuckovCustomModel.UI.Components
         {
             if (_currentTarget == null) return;
 
-            var idleAudioConfig = ModBehaviour.Instance?.IdleAudioConfig;
+            var idleAudioConfig = ModEntry.IdleAudioConfig;
             if (idleAudioConfig == null) return;
 
             if (!float.TryParse(value, out var maxValue)) return;

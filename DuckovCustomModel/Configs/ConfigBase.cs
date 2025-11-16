@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using DuckovCustomModel.Core;
 using DuckovCustomModel.Managers;
 using Newtonsoft.Json;
 
@@ -9,8 +10,6 @@ namespace DuckovCustomModel.Configs
     {
         // ReSharper disable once MemberCanBeProtected.Global
         public abstract void LoadDefault();
-
-        public abstract bool Validate();
 
         public abstract void CopyFrom(IConfigBase other);
 
@@ -29,7 +28,7 @@ namespace DuckovCustomModel.Configs
                 }
 
                 var json = File.ReadAllText(filePath);
-                JsonConvert.PopulateObject(json, this, Constant.JsonSettings);
+                JsonConvert.PopulateObject(json, this, JsonSettings.Default);
                 if (Validate() && autoSaveOnLoad) SaveToFile(filePath);
             }
             catch (Exception ex)
@@ -48,7 +47,7 @@ namespace DuckovCustomModel.Configs
 
                 if (withBackup && File.Exists(filePath)) ConfigManager.CreateBackupFile(filePath);
 
-                var json = JsonConvert.SerializeObject(this, Constant.JsonSettings);
+                var json = JsonConvert.SerializeObject(this, JsonSettings.Default);
                 File.WriteAllText(filePath, json);
             }
             catch (Exception ex)
@@ -63,5 +62,7 @@ namespace DuckovCustomModel.Configs
             clone.CopyFrom(this);
             return clone;
         }
+
+        public abstract bool Validate();
     }
 }

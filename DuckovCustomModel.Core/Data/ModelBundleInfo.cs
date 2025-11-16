@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using DuckovCustomModel;
 
-namespace DuckovCustomModel.Data
+namespace DuckovCustomModel.Core.Data
 {
     public class ModelBundleInfo
     {
@@ -15,15 +14,17 @@ namespace DuckovCustomModel.Data
 
         [JsonIgnore] public string DirectoryPath { get; internal set; } = string.Empty;
 
-        public static ModelBundleInfo? LoadFromDirectory(string directoryPath)
+        public static ModelBundleInfo? LoadFromDirectory(string directoryPath,
+            JsonSerializerSettings? jsonSettings = null)
         {
             var infoFilePath = Path.Combine(directoryPath, "bundleinfo.json");
             if (!File.Exists(infoFilePath)) return null;
-            
+
             try
             {
                 var json = File.ReadAllText(infoFilePath);
-                var info = JsonConvert.DeserializeObject<ModelBundleInfo>(json, Constant.JsonSettings);
+                var settings = jsonSettings ?? JsonSettings.Default;
+                var info = JsonConvert.DeserializeObject<ModelBundleInfo>(json, settings);
                 if (info == null) return info;
                 info.DirectoryPath = directoryPath;
                 info.Models = info.Models.Where(model => model.Validate()).ToArray();
@@ -31,13 +32,15 @@ namespace DuckovCustomModel.Data
             }
             catch (JsonException ex)
             {
-                ModLogger.LogError($"Failed to parse bundleinfo.json in '{directoryPath}': {ex.Message}");
+                ModLogger.LogError(
+                    $"Failed to parse bundleinfo.json in '{directoryPath}': {ex.Message}");
                 ModLogger.LogException(ex);
                 return null;
             }
             catch (Exception ex)
             {
-                ModLogger.LogError($"Failed to load bundleinfo.json from '{directoryPath}': {ex.Message}");
+                ModLogger.LogError(
+                    $"Failed to load bundleinfo.json from '{directoryPath}': {ex.Message}");
                 ModLogger.LogException(ex);
                 return null;
             }

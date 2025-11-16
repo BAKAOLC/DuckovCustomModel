@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Duckov.UI;
 using DuckovCustomModel.Configs;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.Localizations;
 using DuckovCustomModel.Managers;
 using DuckovCustomModel.MonoBehaviours;
@@ -55,7 +55,7 @@ namespace DuckovCustomModel.UI
         private bool _uiActive;
         private GameObject? _uiRoot;
 
-        private static UIConfig? UIConfig => ModBehaviour.Instance?.UIConfig;
+        private static UIConfig? UIConfig => ModEntry.UIConfig;
         private static CharacterInputControl? CharacterInputControl => CharacterInputControl.Instance;
         private static PlayerInput? PlayerInput => GameManager.MainPlayerInput;
 

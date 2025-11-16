@@ -6,6 +6,8 @@ registries:
   Duckov-Custom-Model:
     type: nuget-feed
     url: https://nuget.pkg.github.com/Duckov-Custom-Model/index.json
+    username: Duckov-Custom-Model
+    password: ${{secrets.GITHUB_TOKEN}}
 updates:
   # 启用 .NET 依赖项的版本更新
   - package-ecosystem: "nuget"

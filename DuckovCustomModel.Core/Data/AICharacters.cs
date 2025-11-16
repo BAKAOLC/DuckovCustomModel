@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
-namespace DuckovCustomModel.Data
+namespace DuckovCustomModel.Core.Data
 {
-    public class AICharacters
+    public static class AICharacters
     {
         public const string AllAICharactersKey = "*";
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 
 namespace DuckovCustomModel.Managers
 {
@@ -52,10 +52,10 @@ namespace DuckovCustomModel.Managers
             IsRefreshing = true;
 
             _refreshStartModelIDs = new();
-            if (ModBehaviour.Instance?.UsingModel != null)
+            if (ModEntry.UsingModel != null)
                 foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
                 {
-                    var modelID = ModBehaviour.Instance.UsingModel.GetModelID(target);
+                    var modelID = ModEntry.UsingModel.GetModelID(target);
                     if (!string.IsNullOrEmpty(modelID))
                         _refreshStartModelIDs[target] = modelID;
                 }
@@ -85,7 +85,7 @@ namespace DuckovCustomModel.Managers
                     var handlers = ModelManager.GetAllModelHandlers(target);
                     if (handlers.Count == 0) continue;
 
-                    var modelID = ModBehaviour.Instance?.UsingModel?.GetModelID(target) ?? string.Empty;
+                    var modelID = ModEntry.UsingModel?.GetModelID(target) ?? string.Empty;
                     if (string.IsNullOrEmpty(modelID)) continue;
 
                     if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out _)) continue;
@@ -165,7 +165,7 @@ namespace DuckovCustomModel.Managers
                     {
                         if (!targetsToRestore[target]) continue;
 
-                        var currentModelID = ModBehaviour.Instance?.UsingModel?.GetModelID(target) ?? string.Empty;
+                        var currentModelID = ModEntry.UsingModel?.GetModelID(target) ?? string.Empty;
                         if (string.IsNullOrEmpty(currentModelID)) continue;
 
                         var refreshStartModelID = _refreshStartModelIDs?.GetValueOrDefault(target);
@@ -228,7 +228,7 @@ namespace DuckovCustomModel.Managers
 
         public static void ApplyModelToTarget(ModelTarget target, string modelID, bool forceReapply = false)
         {
-            if (ModBehaviour.Instance?.UsingModel == null) return;
+            if (ModEntry.UsingModel == null) return;
             if (string.IsNullOrEmpty(modelID)) return;
 
             var handlers = ModelManager.GetAllModelHandlers(target);
@@ -282,13 +282,13 @@ namespace DuckovCustomModel.Managers
 
         public static void ApplyAllModelsFromConfig(bool forceReapply = false)
         {
-            if (ModBehaviour.Instance?.UsingModel == null) return;
+            if (ModEntry.UsingModel == null) return;
 
             foreach (ModelTarget target in Enum.GetValues(typeof(ModelTarget)))
             {
                 if (target == ModelTarget.AICharacter) continue;
 
-                var modelID = ModBehaviour.Instance.UsingModel.GetModelID(target);
+                var modelID = ModEntry.UsingModel.GetModelID(target);
                 if (string.IsNullOrEmpty(modelID)) continue;
 
                 ApplyModelToTarget(target, modelID, forceReapply);
@@ -299,11 +299,11 @@ namespace DuckovCustomModel.Managers
 
         public static void ApplyAllAICharacterModelsFromConfig(bool forceReapply = false)
         {
-            if (ModBehaviour.Instance?.UsingModel == null) return;
+            if (ModEntry.UsingModel == null) return;
 
             foreach (var nameKey in AICharacters.SupportedAICharacters)
             {
-                var modelID = ModBehaviour.Instance.UsingModel.GetAICharacterModelIDWithFallback(nameKey);
+                var modelID = ModEntry.UsingModel.GetAICharacterModelIDWithFallback(nameKey);
                 if (string.IsNullOrEmpty(modelID)) continue;
 
                 ApplyModelToAICharacter(nameKey, modelID, forceReapply);
@@ -312,7 +312,7 @@ namespace DuckovCustomModel.Managers
 
         public static void ApplyModelToAICharacter(string nameKey, string modelID, bool forceReapply = false)
         {
-            if (ModBehaviour.Instance?.UsingModel == null) return;
+            if (ModEntry.UsingModel == null) return;
             if (string.IsNullOrEmpty(modelID)) return;
             if (string.IsNullOrEmpty(nameKey)) return;
 
@@ -362,7 +362,7 @@ namespace DuckovCustomModel.Managers
         public static void ApplyModelToTargetAfterRefresh(ModelTarget target, string modelID,
             IReadOnlyCollection<string>? bundlesToReload = null)
         {
-            if (ModBehaviour.Instance?.UsingModel == null) return;
+            if (ModEntry.UsingModel == null) return;
             if (string.IsNullOrEmpty(modelID)) return;
 
             if (!ModelManager.FindModelByID(modelID, out var bundleInfo, out var modelInfo))

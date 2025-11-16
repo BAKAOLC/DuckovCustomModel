@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.UI.Base;
 using DuckovCustomModel.UI.Data;
 using SodaCraft.Localizations;
@@ -47,7 +47,7 @@ namespace DuckovCustomModel.UI.Components
             if (_content == null) return;
 
             var targets = GetAllTargets();
-            var usingModel = ModBehaviour.Instance?.UsingModel;
+            var usingModel = ModEntry.UsingModel;
 
             foreach (var target in targets)
             {
@@ -89,14 +89,12 @@ namespace DuckovCustomModel.UI.Components
                     _targetButtons.Remove(buttonId);
                 }
 
-            if (_selectedTarget == null && targets.Count > 0)
-            {
-                _selectedTarget = targets[0];
-                _selectedTarget.IsSelected = true;
-                if (_targetButtons.TryGetValue(_selectedTarget.Id, out var firstButton))
-                    UpdateTargetButton(firstButton, _selectedTarget);
-                OnTargetSelected?.Invoke(_selectedTarget);
-            }
+            if (_selectedTarget != null || targets.Count <= 0) return;
+            _selectedTarget = targets[0];
+            _selectedTarget.IsSelected = true;
+            if (_targetButtons.TryGetValue(_selectedTarget.Id, out var firstButton))
+                UpdateTargetButton(firstButton, _selectedTarget);
+            OnTargetSelected?.Invoke(_selectedTarget);
         }
 
         private static List<TargetInfo> GetAllTargets()
@@ -105,15 +103,12 @@ namespace DuckovCustomModel.UI.Components
             {
                 TargetInfo.CreateCharacterTarget(),
                 TargetInfo.CreatePetTarget(),
+                TargetInfo.CreateAllAICharactersTarget(),
             };
 
-            targets.Add(TargetInfo.CreateAllAICharactersTarget());
-
-            foreach (var nameKey in AICharacters.SupportedAICharacters)
-            {
-                var displayName = LocalizationManager.GetPlainText(nameKey);
-                targets.Add(TargetInfo.CreateAICharacterTarget(nameKey, displayName));
-            }
+            targets.AddRange(from nameKey in AICharacters.SupportedAICharacters
+                let displayName = LocalizationManager.GetPlainText(nameKey)
+                select TargetInfo.CreateAICharacterTarget(nameKey, displayName));
 
             return targets;
         }

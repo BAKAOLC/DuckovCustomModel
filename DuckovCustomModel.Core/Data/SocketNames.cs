@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using System.Reflection;
-using DuckovCustomModel.Utils;
 
-namespace DuckovCustomModel.Data
+namespace DuckovCustomModel.Core.Data
 {
     public static class SocketNames
     {
@@ -30,17 +28,17 @@ namespace DuckovCustomModel.Data
         public const string MeleeWeapon = "MeleeWeaponLocator";
         public const string PopText = "PopTextLocator";
 
-        public static readonly Dictionary<FieldInfo, string> InternalSocketMap = new()
-        {
-            { CharacterModelSocketUtils.LeftHandSocket, LeftHand },
-            { CharacterModelSocketUtils.RightHandSocket, RightHand },
-            { CharacterModelSocketUtils.ArmorSocket, Armor },
-            { CharacterModelSocketUtils.HelmetSocket, Helmet },
-            { CharacterModelSocketUtils.FaceSocket, Face },
-            { CharacterModelSocketUtils.BackpackSocket, Backpack },
-            { CharacterModelSocketUtils.MeleeWeaponSocket, MeleeWeapon },
-            { CharacterModelSocketUtils.PopTextSocket, PopText },
-        };
+        public static readonly List<string> InternalSocketNames =
+        [
+            LeftHand,
+            RightHand,
+            Armor,
+            Helmet,
+            Face,
+            Backpack,
+            MeleeWeapon,
+            PopText,
+        ];
 
         #endregion
     }

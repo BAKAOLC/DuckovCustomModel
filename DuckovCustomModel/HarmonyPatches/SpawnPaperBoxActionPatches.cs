@@ -1,4 +1,4 @@
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.MonoBehaviours;
 using HarmonyLib;
 

@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
-namespace DuckovCustomModel.Data
+namespace DuckovCustomModel.Core.Data
 {
     public static class SoundTags
     {

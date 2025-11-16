@@ -7,7 +7,7 @@ namespace DuckovCustomModel
     {
         public const string ModID = "DuckovCustomModel";
         public const string ModName = "Duckov Custom Model";
-        public const string ModVersion = "1.7.12";
+        public const string ModVersion = "1.8.0";
         public const string HarmonyId = "com.ritsukage.DuckovCustomModel";
 
         public static readonly JsonSerializerSettings JsonSettings = new()

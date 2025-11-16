@@ -2,6 +2,17 @@
 
 English | [中文](CHANGELOG.md)
 
+## v1.8.0
+
+- Split some logic into different assemblies to facilitate future SDK development
+- Adjusted loading logic, added additional Mod loading wrapper to reduce issues caused by Harmony loading order
+- Under normal working conditions, it should no longer be necessary to consider whether this mod is loaded before Harmony
+
+## v1.7.12
+
+- Added sound tag `trigger_on_death` for automatically playing sound effects when a character dies
+- Fixed issue where health bar height was not refreshed when switching models
+
 ## v1.7.11
 
 - Added footstep sound frequency configuration feature, supports configuring walk and run footstep trigger frequency per model in `bundleinfo.json`

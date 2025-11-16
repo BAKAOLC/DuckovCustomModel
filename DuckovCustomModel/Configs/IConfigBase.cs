@@ -1,5 +1,5 @@
 ﻿using System;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 
 namespace DuckovCustomModel.Configs
 {

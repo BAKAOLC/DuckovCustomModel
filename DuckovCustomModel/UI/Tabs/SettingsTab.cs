@@ -23,7 +23,7 @@ namespace DuckovCustomModel.UI.Tabs
         private int _settingRowIndex;
         private Toggle? _showDCMButtonToggle;
 
-        private static UIConfig? UIConfig => ModBehaviour.Instance?.UIConfig;
+        private static UIConfig? UIConfig => ModEntry.UIConfig;
 
         public bool IsWaitingForKeyInput => _isWaitingForUIKeyInput || _isWaitingForAnimatorParamsKeyInput;
 

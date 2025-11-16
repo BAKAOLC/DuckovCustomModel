@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using Duckov;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.MonoBehaviours;
 using FMOD.Studio;
 using HarmonyLib;

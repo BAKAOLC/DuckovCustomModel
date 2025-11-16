@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.Localizations;
 using DuckovCustomModel.Managers;
 using DuckovCustomModel.UI.Base;
@@ -282,7 +282,7 @@ namespace DuckovCustomModel.UI.Components
                 await AssetBundleManager.CheckBundleStatusAsync(bundle, model, cancellationToken);
             var hasError = !isValid;
 
-            var usingModel = ModBehaviour.Instance?.UsingModel;
+            var usingModel = ModEntry.UsingModel;
             var isInUse = false;
             if (_currentTarget != null && usingModel != null)
             {
@@ -447,7 +447,7 @@ namespace DuckovCustomModel.UI.Components
         {
             if (_currentTarget == null) return;
 
-            var usingModel = ModBehaviour.Instance?.UsingModel;
+            var usingModel = ModEntry.UsingModel;
             if (usingModel == null) return;
 
             if (_currentTarget.TargetType == ModelTarget.AICharacter && _currentTarget.AICharacterNameKey != null)
@@ -474,7 +474,7 @@ namespace DuckovCustomModel.UI.Components
         {
             if (_currentTarget == null) return;
 
-            var usingModel = ModBehaviour.Instance?.UsingModel;
+            var usingModel = ModEntry.UsingModel;
             if (usingModel == null) return;
 
             if (_currentTarget.TargetType == ModelTarget.AICharacter && _currentTarget.AICharacterNameKey != null)

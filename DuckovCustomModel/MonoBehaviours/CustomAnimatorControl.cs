@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Duckov;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.Utils;
 using UnityEngine;
 
@@ -312,19 +312,19 @@ namespace DuckovCustomModel.MonoBehaviours
             SetAnimatorBool(CustomAnimatorHash.ThermalOn, thermalOn);
 
             var hideOriginalEquipment = false;
-            if (ModBehaviour.Instance?.HideEquipmentConfig != null && _modelHandler != null)
+            if (ModEntry.HideEquipmentConfig != null && _modelHandler != null)
             {
                 if (_modelHandler.Target == ModelTarget.AICharacter)
                 {
                     var nameKey = _characterMainControl?.characterPreset?.nameKey;
                     if (!string.IsNullOrEmpty(nameKey))
-                        hideOriginalEquipment = ModBehaviour.Instance.HideEquipmentConfig
+                        hideOriginalEquipment = ModEntry.HideEquipmentConfig
                             .GetHideAICharacterEquipment(nameKey);
                 }
                 else
                 {
                     hideOriginalEquipment =
-                        ModBehaviour.Instance.HideEquipmentConfig.GetHideEquipment(_modelHandler.Target);
+                        ModEntry.HideEquipmentConfig.GetHideEquipment(_modelHandler.Target);
                 }
             }
 

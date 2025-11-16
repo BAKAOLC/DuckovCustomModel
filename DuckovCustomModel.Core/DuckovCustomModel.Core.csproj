@@ -1,9 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <AssemblyName>DuckovCustomModel.Core</AssemblyName>
+    <RootNamespace>DuckovCustomModel.Core</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -22,21 +24,12 @@
 
   <!-- 本地开发使用游戏目录 -->
   <ItemGroup Condition="'$(UseGameLibsFromNuGet)' == 'false'">
-    <Reference Include="$(DuckovPath)\Duckov_Data\Managed\TeamSoda.*">
-      <Private>False</Private>
-    </Reference>
     <Reference Include="$(DuckovPath)\Duckov_Data\Managed\Unity*">
       <Private>False</Private>
     </Reference>
     <Reference Include="$(DuckovPath)\Duckov_Data\Managed\Newtonsoft.Json.dll">
       <Private>False</Private>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="info.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

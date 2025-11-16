@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using HarmonyLib;
 using UnityEngine;
 
@@ -8,16 +8,16 @@ namespace DuckovCustomModel.Utils
 {
     public static class CharacterModelSocketUtils
     {
-        public static IReadOnlyDictionary<FieldInfo, string> AllSocketFields => new Dictionary<FieldInfo, string>
+        public static IReadOnlyDictionary<string, FieldInfo> AllSocketFields => new Dictionary<string, FieldInfo>
         {
-            { LeftHandSocket, SocketNames.LeftHand },
-            { RightHandSocket, SocketNames.RightHand },
-            { ArmorSocket, SocketNames.Armor },
-            { HelmetSocket, SocketNames.Helmet },
-            { FaceSocket, SocketNames.Face },
-            { BackpackSocket, SocketNames.Backpack },
-            { MeleeWeaponSocket, SocketNames.MeleeWeapon },
-            { PopTextSocket, SocketNames.PopText },
+            { SocketNames.LeftHand, LeftHandSocket },
+            { SocketNames.RightHand, RightHandSocket },
+            { SocketNames.Armor, ArmorSocket },
+            { SocketNames.Helmet, HelmetSocket },
+            { SocketNames.Face, FaceSocket },
+            { SocketNames.Backpack, BackpackSocket },
+            { SocketNames.MeleeWeapon, MeleeWeaponSocket },
+            { SocketNames.PopText, PopTextSocket },
         };
 
         // ReSharper disable once StringLiteralTypo

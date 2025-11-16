@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace DuckovCustomModel.Data
+namespace DuckovCustomModel.Core.Data
 {
     public class AnimatorParamInfo
     {

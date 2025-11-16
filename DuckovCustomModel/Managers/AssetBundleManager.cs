@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using UnityEngine;
 using Object = UnityEngine.Object;
 

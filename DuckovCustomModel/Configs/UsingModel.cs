@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.Managers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -130,7 +131,7 @@ namespace DuckovCustomModel.Configs
                 }
                 else
                 {
-                    JsonConvert.PopulateObject(json, this, Constant.JsonSettings);
+                    JsonConvert.PopulateObject(json, this, JsonSettings.Default);
                     if (Validate() && autoSaveOnLoad) SaveToFile(filePath);
                 }
             }

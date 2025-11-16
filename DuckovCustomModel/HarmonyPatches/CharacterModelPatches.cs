@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.Managers;
 using HarmonyLib;
 
@@ -25,7 +25,7 @@ namespace DuckovCustomModel.HarmonyPatches
             var modelHandler = ModelManager.InitializeModelHandler(characterMainControl, ModelTarget.AICharacter);
             if (modelHandler == null) return;
 
-            var usingModel = ModBehaviour.Instance?.UsingModel;
+            var usingModel = ModEntry.UsingModel;
             if (usingModel == null) return;
 
             var modelID = usingModel.GetAICharacterModelIDWithFallback(preset.nameKey);

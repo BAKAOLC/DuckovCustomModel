@@ -5,7 +5,7 @@ using System.Reflection;
 using Duckov;
 using Duckov.UI;
 using DuckovCustomModel.Configs;
-using DuckovCustomModel.Data;
+using DuckovCustomModel.Core.Data;
 using DuckovCustomModel.Managers;
 using DuckovCustomModel.Utils;
 using UnityEngine;
@@ -15,7 +15,7 @@ namespace DuckovCustomModel.MonoBehaviours
 {
     public class ModelHandler : MonoBehaviour
     {
-        private static readonly IReadOnlyDictionary<FieldInfo, string> OriginalModelSocketFieldInfos =
+        private static readonly IReadOnlyDictionary<string, FieldInfo> OriginalModelSocketFieldInfos =
             CharacterModelSocketUtils.AllSocketFields;
 
         private readonly HashSet<GameObject> _currentUsingCustomSocketObjects = [];
@@ -53,18 +53,17 @@ namespace DuckovCustomModel.MonoBehaviours
             get
             {
                 if (OriginalCharacterModel == null) return false;
-                if (ModBehaviour.Instance == null) return false;
-                if (ModBehaviour.Instance.HideEquipmentConfig == null) return false;
+                if (ModEntry.HideEquipmentConfig == null) return false;
                 if (!IsHiddenOriginalModel || CustomModelInstance == null) return false;
 
                 if (Target != ModelTarget.AICharacter)
-                    return ModBehaviour.Instance.HideEquipmentConfig.GetHideEquipment(Target);
+                    return ModEntry.HideEquipmentConfig.GetHideEquipment(Target);
                 var nameKey = CharacterMainControl?.characterPreset?.nameKey;
                 if (string.IsNullOrEmpty(nameKey))
-                    return ModBehaviour.Instance.HideEquipmentConfig.GetHideEquipment(Target);
+                    return ModEntry.HideEquipmentConfig.GetHideEquipment(Target);
 
                 var effectiveNameKey = GetEffectiveAICharacterConfigKey(nameKey);
-                return ModBehaviour.Instance.HideEquipmentConfig.GetHideAICharacterEquipment(effectiveNameKey);
+                return ModEntry.HideEquipmentConfig.GetHideAICharacterEquipment(effectiveNameKey);
             }
         }
 
@@ -72,7 +71,7 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             get
             {
-                var modelAudioConfig = ModBehaviour.Instance?.ModelAudioConfig;
+                var modelAudioConfig = ModEntry.ModelAudioConfig;
                 if (modelAudioConfig == null) return true;
 
                 if (Target != ModelTarget.AICharacter)
@@ -101,19 +100,19 @@ namespace DuckovCustomModel.MonoBehaviours
             if (!HasIdleSounds()) return;
             if (CharacterMainControl.Health != null && CharacterMainControl.Health.IsDead) return;
 
-            if (ModBehaviour.Instance?.IdleAudioConfig != null)
+            if (ModEntry.IdleAudioConfig != null)
             {
                 if (Target == ModelTarget.AICharacter)
                 {
                     var nameKey = NameKey;
                     if (string.IsNullOrEmpty(nameKey)) return;
                     var effectiveNameKey = GetEffectiveAICharacterConfigKey(nameKey);
-                    if (!ModBehaviour.Instance.IdleAudioConfig.IsAICharacterIdleAudioEnabled(effectiveNameKey))
+                    if (!ModEntry.IdleAudioConfig.IsAICharacterIdleAudioEnabled(effectiveNameKey))
                         return;
                 }
                 else
                 {
-                    if (!ModBehaviour.Instance.IdleAudioConfig.IsIdleAudioEnabled(Target))
+                    if (!ModEntry.IdleAudioConfig.IsIdleAudioEnabled(Target))
                         return;
                 }
             }
@@ -421,21 +420,21 @@ namespace DuckovCustomModel.MonoBehaviours
             if (Target == ModelTarget.AICharacter)
             {
                 var nameKey = NameKey;
-                if (ModBehaviour.Instance?.IdleAudioConfig == null || string.IsNullOrEmpty(nameKey))
+                if (ModEntry.IdleAudioConfig == null || string.IsNullOrEmpty(nameKey))
                 {
                     ScheduleNextIdleAudio();
                 }
                 else
                 {
                     var effectiveNameKey = GetEffectiveAICharacterConfigKey(nameKey);
-                    if (ModBehaviour.Instance.IdleAudioConfig.IsAICharacterIdleAudioEnabled(effectiveNameKey))
+                    if (ModEntry.IdleAudioConfig.IsAICharacterIdleAudioEnabled(effectiveNameKey))
                         ScheduleNextIdleAudio();
                 }
             }
             else
             {
-                if (ModBehaviour.Instance?.IdleAudioConfig == null ||
-                    ModBehaviour.Instance.IdleAudioConfig.IsIdleAudioEnabled(Target))
+                if (ModEntry.IdleAudioConfig == null ||
+                    ModEntry.IdleAudioConfig.IsIdleAudioEnabled(Target))
                     ScheduleNextIdleAudio();
             }
         }
@@ -508,7 +507,9 @@ namespace DuckovCustomModel.MonoBehaviours
             if (OriginalCharacterModel == null) return;
 
             _originalModelSockets.Clear();
-            foreach (var (socketField, socketName) in OriginalModelSocketFieldInfos)
+
+            var socketFields = OriginalModelSocketFieldInfos.ToArray();
+            foreach (var (socketName, socketField) in socketFields)
             {
                 var socketTransform = socketField.GetValue(OriginalCharacterModel) as Transform;
                 if (socketTransform == null) continue;
@@ -530,12 +531,17 @@ namespace DuckovCustomModel.MonoBehaviours
             if (OriginalCharacterModel == null) return;
 
             _customModelSockets.Clear();
-            foreach (var kvp in SocketNames.InternalSocketMap)
+
+            var socketFields = OriginalModelSocketFieldInfos.ToArray();
+            foreach (var locatorName in SocketNames.InternalSocketNames)
             {
-                var locatorTransform = SearchLocatorTransform(CustomModelInstance!, kvp.Value);
+                var locatorTransform = SearchLocatorTransform(CustomModelInstance!, locatorName);
                 if (locatorTransform == null) continue;
-                _customModelSockets[kvp.Key] = locatorTransform;
-                _customModelLocators[kvp.Value] = locatorTransform;
+                _customModelLocators[locatorName] = locatorTransform;
+
+                var fieldInfo = socketFields.FirstOrDefault(f => f.Key == locatorName).Value;
+                if (fieldInfo != null)
+                    _customModelSockets[fieldInfo] = locatorTransform;
             }
 
             foreach (var locatorName in SocketNames.ExternalSocketNames)
@@ -818,7 +824,7 @@ namespace DuckovCustomModel.MonoBehaviours
         {
             if (string.IsNullOrEmpty(nameKey)) return AICharacters.AllAICharactersKey;
 
-            var usingModel = ModBehaviour.Instance?.UsingModel;
+            var usingModel = ModEntry.UsingModel;
             if (usingModel == null) return nameKey;
 
             var modelID = usingModel.GetAICharacterModelID(nameKey);
@@ -956,7 +962,7 @@ namespace DuckovCustomModel.MonoBehaviours
 
         private void ScheduleNextIdleAudio()
         {
-            if (ModBehaviour.Instance?.IdleAudioConfig == null)
+            if (ModEntry.IdleAudioConfig == null)
             {
                 _nextIdleAudioTime = Time.time + Random.Range(30f, 45f);
                 return;
@@ -968,17 +974,17 @@ namespace DuckovCustomModel.MonoBehaviours
                 var nameKey = NameKey;
                 if (string.IsNullOrEmpty(nameKey))
                 {
-                    interval = ModBehaviour.Instance.IdleAudioConfig.GetIdleAudioInterval(Target);
+                    interval = ModEntry.IdleAudioConfig.GetIdleAudioInterval(Target);
                 }
                 else
                 {
                     var effectiveNameKey = GetEffectiveAICharacterConfigKey(nameKey);
-                    interval = ModBehaviour.Instance.IdleAudioConfig.GetAICharacterIdleAudioInterval(effectiveNameKey);
+                    interval = ModEntry.IdleAudioConfig.GetAICharacterIdleAudioInterval(effectiveNameKey);
                 }
             }
             else
             {
-                interval = ModBehaviour.Instance.IdleAudioConfig.GetIdleAudioInterval(Target);
+                interval = ModEntry.IdleAudioConfig.GetIdleAudioInterval(Target);
             }
 
             var randomInterval = Random.Range(interval.Min, interval.Max);

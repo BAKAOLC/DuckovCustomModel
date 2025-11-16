@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace DuckovCustomModel.Data
+namespace DuckovCustomModel.Core.Data
 {
     public class SoundInfo
     {

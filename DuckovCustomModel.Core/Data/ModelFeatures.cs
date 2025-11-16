@@ -1,4 +1,4 @@
-namespace DuckovCustomModel.Data
+namespace DuckovCustomModel.Core.Data
 {
     public static class ModelFeatures
     {

@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace DuckovCustomModel.Data
+namespace DuckovCustomModel.Core.Data
 {
     public class BundleHashInfo
     {
@@ -27,7 +27,8 @@ namespace DuckovCustomModel.Data
             }
             catch (Exception ex)
             {
-                ModLogger.LogError($"Failed to calculate hash for file '{filePath}': {ex.Message}");
+                ModLogger.LogError(
+                    $"Failed to calculate hash for file '{filePath}': {ex.Message}");
                 return string.Empty;
             }
         }
@@ -45,37 +46,42 @@ namespace DuckovCustomModel.Data
             }
             catch (Exception ex)
             {
-                ModLogger.LogError($"Failed to calculate hash for string: {ex.Message}");
+                ModLogger.LogError(
+                    $"Failed to calculate hash for string: {ex.Message}");
                 return string.Empty;
             }
         }
 
-        public static BundleHashInfo? LoadFromFile(string filePath)
+        public static BundleHashInfo? LoadFromFile(string filePath, JsonSerializerSettings? jsonSettings = null)
         {
             if (!File.Exists(filePath)) return null;
 
             try
             {
                 var json = File.ReadAllText(filePath);
-                return JsonConvert.DeserializeObject<BundleHashInfo>(json, Constant.JsonSettings);
+                var settings = jsonSettings ?? JsonSettings.Default;
+                return JsonConvert.DeserializeObject<BundleHashInfo>(json, settings);
             }
             catch (Exception ex)
             {
-                ModLogger.LogError($"Failed to load BundleHashInfo from '{filePath}': {ex.Message}");
+                ModLogger.LogError(
+                    $"Failed to load BundleHashInfo from '{filePath}': {ex.Message}");
                 return null;
             }
         }
 
-        public void SaveToFile(string filePath)
+        public void SaveToFile(string filePath, JsonSerializerSettings? jsonSettings = null)
         {
             try
             {
-                var json = JsonConvert.SerializeObject(this, Constant.JsonSettings);
+                var settings = jsonSettings ?? JsonSettings.Default;
+                var json = JsonConvert.SerializeObject(this, settings);
                 File.WriteAllText(filePath, json);
             }
             catch (Exception ex)
             {
-                ModLogger.LogError($"Failed to save BundleHashInfo to '{filePath}': {ex.Message}");
+                ModLogger.LogError(
+                    $"Failed to save BundleHashInfo to '{filePath}': {ex.Message}");
             }
         }
     }
